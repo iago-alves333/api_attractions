@@ -31,7 +31,7 @@ public class Review {
     @Column(nullable = false)
     private Integer rating;
 
-    @Column(length = 1000)
+    @Column(length = 500)
     private String comment;
 
     @Column(name = "created_at", updatable = false)
