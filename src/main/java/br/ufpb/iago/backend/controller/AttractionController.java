@@ -1,4 +1,4 @@
 package br.ufpb.iago.backend.controller;
 
-public class userController {
+public class AttractionController {
 }

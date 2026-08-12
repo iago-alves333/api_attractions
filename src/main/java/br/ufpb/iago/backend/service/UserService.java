@@ -1,4 +1,4 @@
 package br.ufpb.iago.backend.service;
 
-public class reservationService {
+public class UserService {
 }
