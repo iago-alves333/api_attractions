@@ -35,34 +35,29 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Rotas públicas de infraestrutura
+                        // Infraestrutura
                         .requestMatchers("/error").permitAll()
 
                         // Autenticação
-                        .requestMatchers("/api/v1/auth/login").permitAll()
-                        .requestMatchers("/api/v1/auth/register").permitAll()
+                        .requestMatchers("/api/v1/auth/**").permitAll()
 
-                        // Atrações: leitura pública, escrita restrita a GUIDE
+                        // Attractions: leitura pública, escrita restrita a GUIDE
                         .requestMatchers(HttpMethod.GET, "/api/v1/attractions/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/attractions").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/attractions/**").hasRole("GUIDE")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/attractions/**").hasRole("GUIDE")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/attractions/**").hasRole("GUIDE")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/create/attraction").hasRole("GUIDE")
 
-                        // Reservas: só turistas
+                        // Reservations: exclusivo de TOURIST
                         .requestMatchers("/api/v1/reservations/**").hasRole("TOURIST")
-                        .requestMatchers("/api/v1/reservations").hasRole("TOURIST")
 
-                        // Reviews: só turistas podem criar/editar; leitura pode ser pública
+                        // Reviews: leitura pública, escrita restrita a TOURIST
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/reviews/**").hasRole("TOURIST")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/reviews/**").hasRole("TOURIST")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/reviews/**").hasRole("TOURIST")
 
-                        // Usuários: administração restrita
+                        // Users: administração restrita
                         .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/users").hasRole("ADMIN")
 
                         // Qualquer outra rota exige autenticação
                         .anyRequest().authenticated()
