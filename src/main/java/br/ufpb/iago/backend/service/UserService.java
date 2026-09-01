@@ -51,6 +51,10 @@ public class UserService {
 
     @Transactional
     public UserResponseDTO saveUser(UserRequestDTO dto) {
+        if (dto.getRole() == br.ufpb.iago.backend.model.Role.ADMIN) {
+            throw new BusinessException("Não é permitido registrar-se como ADMIN");
+        }
+
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new BusinessException("Email já cadastrado");
         }

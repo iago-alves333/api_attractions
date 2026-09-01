@@ -45,8 +45,20 @@ public class ReservationService {
         Attraction attraction = attractionRepository.findById(dto.getAttractionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Atração não encontrada"));
 
+        if (dto.getReservedFor().isBefore(LocalDateTime.now())) {
+            throw new BusinessException("A data da reserva deve ser no futuro");
+        }
+
         if (attraction.getAvailableSpots() <= 0) {
             throw new BusinessException("Não há vagas disponíveis para esta atração");
+        }
+
+        if (attraction.getGuide() != null && attraction.getGuide().getId().equals(touristId)) {
+            throw new BusinessException("O guia não pode reservar sua própria atração");
+        }
+
+        if (reservationRepository.existsByTouristAndAttractionAndStatus(tourist, attraction, Status.PENDING)) {
+            throw new BusinessException("Você já possui uma reserva pendente para esta atração");
         }
 
         Reservation reservation = new Reservation();
@@ -66,9 +78,9 @@ public class ReservationService {
 
     @Transactional(readOnly = true)
     public List<ReservationResponseDTO> findAllByTourist(UUID touristId) {
-        return reservationRepository.findAll()
+        // Delega a filtragem diretamente para o banco de dados
+        return reservationRepository.findAllByTouristId(touristId)
                 .stream()
-                .filter(r -> r.getTourist().getId().equals(touristId))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -96,8 +108,8 @@ public class ReservationService {
             throw new AccessDeniedException("Você não tem permissão para cancelar esta reserva");
         }
 
-        if (reservation.getStatus() == Status.CANCELLED) {
-            throw new BusinessException("Esta reserva já foi cancelada");
+        if (reservation.getStatus() != Status.PENDING && reservation.getStatus() != Status.CONFIRMED) {
+            throw new BusinessException("Apenas reservas pendentes ou confirmadas podem ser canceladas");
         }
 
         reservation.setStatus(Status.CANCELLED);
@@ -109,6 +121,56 @@ public class ReservationService {
         attractionRepository.save(attraction);
 
         return convertToDTO(reservationRepository.save(reservation));
+    }
+
+    // ─── CONFIRM ──────────────────────────────────────────────────────────────
+
+    @Transactional
+    public ReservationResponseDTO confirm(UUID id, UUID guideId) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva não encontrada"));
+
+        Attraction attraction = reservation.getAttraction();
+        if (attraction.getGuide() == null || !attraction.getGuide().getId().equals(guideId)) {
+            throw new AccessDeniedException("Apenas o guia da atração pode confirmar esta reserva");
+        }
+
+        if (reservation.getStatus() != Status.PENDING) {
+            throw new BusinessException("Apenas reservas pendentes podem ser confirmadas");
+        }
+
+        reservation.setStatus(Status.CONFIRMED);
+        return convertToDTO(reservationRepository.save(reservation));
+    }
+
+    // ─── COMPLETE ─────────────────────────────────────────────────────────────
+
+    @Transactional
+    public ReservationResponseDTO complete(UUID id, UUID guideId) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva não encontrada"));
+
+        Attraction attraction = reservation.getAttraction();
+        if (attraction.getGuide() == null || !attraction.getGuide().getId().equals(guideId)) {
+            throw new AccessDeniedException("Apenas o guia da atração pode completar esta reserva");
+        }
+
+        if (reservation.getStatus() != Status.CONFIRMED) {
+            throw new BusinessException("Apenas reservas confirmadas podem ser completadas");
+        }
+
+        reservation.setStatus(Status.COMPLETED);
+        return convertToDTO(reservationRepository.save(reservation));
+    }
+
+    // ─── GUIDE READ ──────────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<ReservationResponseDTO> findAllByGuide(UUID guideId) {
+        return reservationRepository.findAllByAttractionGuideId(guideId)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     // ─── HELPER ───────────────────────────────────────────────────────────────

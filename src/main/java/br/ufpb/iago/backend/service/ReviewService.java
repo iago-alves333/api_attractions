@@ -7,6 +7,7 @@ import br.ufpb.iago.backend.model.Attraction;
 import br.ufpb.iago.backend.model.Review;
 import br.ufpb.iago.backend.model.User;
 import br.ufpb.iago.backend.repository.AttractionRepository;
+import br.ufpb.iago.backend.repository.ReservationRepository;
 import br.ufpb.iago.backend.repository.ReviewRepository;
 import br.ufpb.iago.backend.repository.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,13 +24,16 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final AttractionRepository attractionRepository;
     private final UserRepository userRepository;
+    private final ReservationRepository reservationRepository;
 
     public ReviewService(ReviewRepository reviewRepository,
                          AttractionRepository attractionRepository,
-                         UserRepository userRepository) {
+                         UserRepository userRepository,
+                         ReservationRepository reservationRepository) {
         this.reviewRepository = reviewRepository;
         this.attractionRepository = attractionRepository;
         this.userRepository = userRepository;
+        this.reservationRepository = reservationRepository;
     }
 
     // ─── CREATE ───────────────────────────────────────────────────────────────
@@ -41,6 +45,16 @@ public class ReviewService {
 
         Attraction attraction = attractionRepository.findById(dto.getAttractionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Atração não encontrada"));
+
+        if (reviewRepository.existsByTouristAndAttraction(tourist, attraction)) {
+            throw new AccessDeniedException("Você já avaliou esta atração");
+        }
+        if( !reservationRepository.existsByTouristAndAttractionAndStatus(tourist, attraction, br.ufpb.iago.backend.model.Status.COMPLETED)) {
+            throw new AccessDeniedException("Você só pode avaliar atrações que você reservou e completou");
+        }
+        if(attraction.getGuide() != null && attraction.getGuide().getId().equals(touristId)) {
+            throw new AccessDeniedException("O guia não pode avaliar sua própria atração");
+        }
 
         Review review = new Review();
         review.setTourist(tourist);
@@ -63,9 +77,8 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<ReviewResponseDTO> findByAttraction(UUID attractionId) {
-        return reviewRepository.findAll()
+        return reviewRepository.findAllByAttractionId(attractionId)
                 .stream()
-                .filter(r -> r.getAttraction().getId().equals(attractionId))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }

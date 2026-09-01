@@ -71,4 +71,36 @@ public class ReservationController {
         ReservationResponseDTO response = reservationService.cancel(id, currentUser.getId());
         return ResponseEntity.ok(response);
     }
+    @PatchMapping("/{id}/confirm")
+    public ResponseEntity<ReservationResponseDTO> confirm(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+
+        ReservationResponseDTO response = reservationService.confirm(id, currentUser.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * PATCH /api/v1/reservations/{id}/complete
+     * Marca uma reserva como concluída. Exige role GUIDE e ser o dono da atração.
+     */
+    @PatchMapping("/{id}/complete")
+    public ResponseEntity<ReservationResponseDTO> complete(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+
+        ReservationResponseDTO response = reservationService.complete(id, currentUser.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/v1/reservations/guide
+     * Lista todas as reservas das atrações do guia autenticado.
+     */
+    @GetMapping("/guide")
+    public ResponseEntity<List<ReservationResponseDTO>> findAllByGuide(
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+
+        return ResponseEntity.ok(reservationService.findAllByGuide(currentUser.getId()));
+    }
 }
