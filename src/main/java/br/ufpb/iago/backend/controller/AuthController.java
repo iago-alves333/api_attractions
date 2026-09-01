@@ -5,11 +5,13 @@ import br.ufpb.iago.backend.dto.LoginResponseDTO;
 import br.ufpb.iago.backend.dto.UserRequestDTO;
 import br.ufpb.iago.backend.dto.UserResponseDTO;
 import br.ufpb.iago.backend.model.User;
+import br.ufpb.iago.backend.security.CustomUserDetails;
 import br.ufpb.iago.backend.security.JwtService;
 import br.ufpb.iago.backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -50,5 +52,12 @@ public class AuthController {
                 user.getName(),
                 user.getRole()
         ));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> getCurrentUser(@AuthenticationPrincipal CustomUserDetails currentUser) {
+        UserResponseDTO user = userService.findById(currentUser.getId());
+        return ResponseEntity.ok(user);
+
     }
 }
