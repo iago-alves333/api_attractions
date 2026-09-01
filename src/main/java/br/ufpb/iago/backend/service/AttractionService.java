@@ -93,6 +93,28 @@ public class AttractionService {
         attractionRepository.delete(attraction);
     }
 
+    // ─── SEARCH ───────────────────────────────────────────────────────────────
+    public List<AttractionResponseDTO> searchByTitle(String title) {
+        return attractionRepository.findByTitleContainingIgnoreCase(title)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+    public List<AttractionResponseDTO> getNearbyAttractions(double lat,double lon, double radiusKm){
+        double radiusInMeters = (radiusKm > 0 ? radiusKm : 50.0) * 1000;
+        List<Attraction> attractions = attractionRepository.findNearby(lat, lon, radiusInMeters);
+        return attractions.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+    public List<AttractionResponseDTO> searchAttractions(String keyword, double lat, double lon, double radiusKm) {
+        double radiusInMeters = (radiusKm > 0 ? radiusKm : 50.0) * 1000;
+        List<Attraction> attractions = attractionRepository.searchByKeywordAndLocation(keyword, lat, lon, radiusInMeters);
+        return attractions.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     // ─── HELPERS ──────────────────────────────────────────────────────────────
 
     private void applyDto(Attraction attraction, AttractionRequestDTO dto) {

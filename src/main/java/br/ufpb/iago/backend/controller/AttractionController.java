@@ -23,10 +23,8 @@ public class AttractionController {
         this.attractionService = attractionService;
     }
 
-    /**
-     * POST /api/v1/attractions
-     * Cria uma nova atração. Exige role GUIDE (configurado no SecurityConfig).
-     */
+    // ─── ENDPOINTS DE CRIAÇÃO E EDIÇÃO (PROTEGIDOS) ───────────────────────────
+
     @PostMapping
     public ResponseEntity<AttractionResponseDTO> create(
             @Valid @RequestBody AttractionRequestDTO dto,
@@ -36,28 +34,6 @@ public class AttractionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * GET /api/v1/attractions
-     * Lista todas as atrações. Acesso público.
-     */
-    @GetMapping
-    public ResponseEntity<List<AttractionResponseDTO>> findAll() {
-        return ResponseEntity.ok(attractionService.findAll());
-    }
-
-    /**
-     * GET /api/v1/attractions/{id}
-     * Busca uma atração pelo ID. Acesso público.
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<AttractionResponseDTO> findById(@PathVariable UUID id) {
-        return ResponseEntity.ok(attractionService.findById(id));
-    }
-
-    /**
-     * PUT /api/v1/attractions/{id}
-     * Atualiza uma atração. Exige role GUIDE e ser o dono da atração.
-     */
     @PutMapping("/{id}")
     public ResponseEntity<AttractionResponseDTO> update(
             @PathVariable UUID id,
@@ -68,10 +44,6 @@ public class AttractionController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * DELETE /api/v1/attractions/{id}
-     * Remove uma atração. Exige role GUIDE e ser o dono da atração.
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID id,
@@ -79,5 +51,44 @@ public class AttractionController {
 
         attractionService.delete(id, currentUser.getId());
         return ResponseEntity.noContent().build();
+    }
+
+    // ─── ENDPOINTS DE BUSCA E LISTAGEM (PÚBLICOS) ─────────────────────────────
+
+    @GetMapping
+    public ResponseEntity<List<AttractionResponseDTO>> findAll() {
+        return ResponseEntity.ok(attractionService.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AttractionResponseDTO> findById(@PathVariable UUID id) {
+        return ResponseEntity.ok(attractionService.findById(id));
+    }
+
+    /**
+     * GET /api/v1/attractions/nearby?lat=X&lon=Y&radiusKm=Z
+     * Busca atrações baseadas em um raio de distância usando PostGIS.
+     */
+    @GetMapping("/nearby")
+    public ResponseEntity<List<AttractionResponseDTO>> getNearby(
+            @RequestParam double lat,
+            @RequestParam double lon,
+            @RequestParam(defaultValue = "10.0") double radiusKm
+    ) {
+        return ResponseEntity.ok(attractionService.getNearbyAttractions(lat, lon, radiusKm));
+    }
+
+    /**
+     * GET /api/v1/attractions/search?keyword=X&lat=Y&lon=Z&radiusKm=W
+     * Busca combinada por título/descrição e raio de distância.
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<AttractionResponseDTO>> search(
+            @RequestParam String keyword,
+            @RequestParam double lat,
+            @RequestParam double lon,
+            @RequestParam(defaultValue = "50.0") double radiusKm
+    ) {
+        return ResponseEntity.ok(attractionService.searchAttractions(keyword, lat, lon, radiusKm));
     }
 }
