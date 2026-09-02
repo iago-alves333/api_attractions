@@ -12,5 +12,6 @@ import java.util.UUID;
 public interface ReservationRepository extends JpaRepository<Reservation, UUID> {
     List<Reservation> findAllByTouristId(UUID touristId);
     List<Reservation> findAllByAttractionGuideId(UUID guideId);
+    List<Reservation> findAllByAttractionId(UUID attractionId);
     boolean existsByTouristAndAttractionAndStatus(User tourist, Attraction attraction, Status status);
 }

@@ -172,6 +172,19 @@ public class ReservationService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+    public List<ReservationResponseDTO> findAllByAttraction(UUID attractionId, UUID guideId) {
+        Attraction attraction = attractionRepository.findById(attractionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Atração não encontrada"));
+
+        if (attraction.getGuide() == null || !attraction.getGuide().getId().equals(guideId)) {
+            throw new AccessDeniedException("Apenas o guia da atração pode ver suas reservas");
+        }
+
+        return reservationRepository.findAllByAttractionId(attractionId)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
     // ─── HELPER ───────────────────────────────────────────────────────────────
 
