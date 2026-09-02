@@ -1,5 +1,6 @@
 package br.ufpb.iago.backend.security;
 
+import br.ufpb.iago.backend.repository.TokenBlacklistRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,10 +20,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService customUserDetailsService;
+    private final TokenBlacklistRepository tokenBlacklistRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService, CustomUserDetailsService customUserDetailsService) {
+    public JwtAuthenticationFilter(JwtService jwtService,
+                                   CustomUserDetailsService customUserDetailsService,
+                                   TokenBlacklistRepository tokenBlacklistRepository) {
         this.jwtService = jwtService;
         this.customUserDetailsService = customUserDetailsService;
+        this.tokenBlacklistRepository = tokenBlacklistRepository;
     }
 
     @Override
@@ -38,6 +43,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         final String token = authHeader.substring(7);
+
+        // Verifica se o token está na blacklist (logout)
+        if (tokenBlacklistRepository.existsByToken(token)) {
+            chain.doFilter(request, response);
+            return;
+        }
 
         if (jwtService.isTokenValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {

@@ -5,7 +5,8 @@ import br.ufpb.iago.backend.model.Role;
 import java.util.UUID;
 
 public record LoginResponseDTO(
-        String token,
+        String accessToken,
+        String refreshToken,
         UUID userId,
         String name,
         Role role

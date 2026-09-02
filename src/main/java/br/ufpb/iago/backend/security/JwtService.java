@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 @Service
@@ -18,7 +20,7 @@ public class JwtService {
     private String secret;
 
     @Value("${jwt.expiration-ms}")
-    private long expirationMs;
+    private long accessTokenExpirationMs;
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -26,7 +28,7 @@ public class JwtService {
 
     public String generateToken(String email, Role role) {
         Date now = new Date();
-        Date expiration = new Date(now.getTime() + expirationMs);
+        Date expiration = new Date(now.getTime() + accessTokenExpirationMs);
 
         return Jwts.builder()
                 .subject(email)
@@ -52,6 +54,14 @@ public class JwtService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * Extrai a data de expiração do token para armazenar na blacklist.
+     */
+    public LocalDateTime extractExpirationFromToken(String token) {
+        Date expiration = extractClaims(token).getExpiration();
+        return expiration.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     }
 
     private Claims extractClaims(String token) {
