@@ -1,6 +1,8 @@
 package br.ufpb.iago.backend.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import org.locationtech.jts.geom.Point;
@@ -38,6 +40,14 @@ public class Attraction {
     @PositiveOrZero
     @Column(nullable = false)
     private int availableSpots;
+
+    @Min(1)
+    @Max(5)
+    @Column(name = "rating_average", nullable = false)
+    private Double ratingAverage;
+
+    @Column(name = "review_count", nullable = false)
+    private Integer reviewCount = 0;
 
     @Column(columnDefinition = "geometry(Point,4326)")
     private Point location;
@@ -94,6 +104,19 @@ public class Attraction {
     public void setAvailableSpots(int availableSpots) {
         this.availableSpots = availableSpots;
     }
+
+    public Integer getReviewCount() {
+        return reviewCount;
+    }
+
+    public void setReviewCount(Integer reviewCount) {
+        this.reviewCount = reviewCount;
+    }
+
+    public Double getRatingAverage() {
+        return ratingAverage;
+    }
+    public void setRatingAverage(Double ratingAverage) {}
 
     public Point getLocation() {
         return location;

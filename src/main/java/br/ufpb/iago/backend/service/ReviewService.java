@@ -49,10 +49,10 @@ public class ReviewService {
         if (reviewRepository.existsByTouristAndAttraction(tourist, attraction)) {
             throw new AccessDeniedException("Você já avaliou esta atração");
         }
-        if( !reservationRepository.existsByTouristAndAttractionAndStatus(tourist, attraction, br.ufpb.iago.backend.model.Status.COMPLETED)) {
+        if (!reservationRepository.existsByTouristAndAttractionAndStatus(tourist, attraction, br.ufpb.iago.backend.model.Status.COMPLETED)) {
             throw new AccessDeniedException("Você só pode avaliar atrações que você reservou e completou");
         }
-        if(attraction.getGuide() != null && attraction.getGuide().getId().equals(touristId)) {
+        if (attraction.getGuide() != null && attraction.getGuide().getId().equals(touristId)) {
             throw new AccessDeniedException("O guia não pode avaliar sua própria atração");
         }
 
@@ -62,7 +62,12 @@ public class ReviewService {
         review.setRating(dto.getRating());
         review.setComment(dto.getComment());
 
-        return convertToDTO(reviewRepository.save(review));
+        review = reviewRepository.save(review);
+
+        // Atualiza a média e a contagem na atração
+        updateAttractionRating(attraction);
+
+        return convertToDTO(review);
     }
 
     // ─── READ ─────────────────────────────────────────────────────────────────
@@ -104,7 +109,12 @@ public class ReviewService {
         review.setRating(dto.getRating());
         review.setComment(dto.getComment());
 
-        return convertToDTO(reviewRepository.save(review));
+        review = reviewRepository.save(review);
+
+        // Atualiza a média na atração após a edição
+        updateAttractionRating(review.getAttraction());
+
+        return convertToDTO(review);
     }
 
     // ─── DELETE ───────────────────────────────────────────────────────────────
@@ -118,10 +128,36 @@ public class ReviewService {
             throw new AccessDeniedException("Você não tem permissão para deletar este review");
         }
 
+        Attraction attraction = review.getAttraction();
+
         reviewRepository.delete(review);
+        // Força a exclusão no banco antes de recalcular a média
+        reviewRepository.flush();
+
+        // Atualiza a média na atração após a exclusão
+        updateAttractionRating(attraction);
     }
 
     // ─── HELPER ───────────────────────────────────────────────────────────────
+
+    private void updateAttractionRating(Attraction attraction) {
+        Double avg = reviewRepository.getAverageRatingByAttractionId(attraction.getId());
+        Integer count = reviewRepository.countByAttractionId(attraction.getId());
+
+        // Se avg for null (ex: quando o último review for deletado), define como 0.0
+        if (avg == null) {
+            avg = 0.0;
+        }
+
+        // Arredonda para 1 casa decimal (ex: 4.33333 -> 4.3)
+        double roundedAvg = Math.round(avg * 10.0) / 10.0;
+
+        attraction.setRatingAverage(roundedAvg);
+        // Assumindo que você criou o campo reviewCount na entidade Attraction
+        attraction.setReviewCount(count != null ? count : 0);
+
+        attractionRepository.save(attraction);
+    }
 
     public ReviewResponseDTO convertToDTO(Review review) {
         return new ReviewResponseDTO(
