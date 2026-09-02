@@ -58,4 +58,14 @@ public class UserController {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * PATCH /api/v1/users/{id}/promote-guide
+     * Promove um TOURIST para GUIDE. Exige role ADMIN.
+     */
+    @PatchMapping("/{id}/promote-guide")
+    public ResponseEntity<UserResponseDTO> promoteToGuide(@PathVariable UUID id) {
+        UserResponseDTO response = userService.promoteToGuide(id);
+        return ResponseEntity.ok(response);
+    }
 }

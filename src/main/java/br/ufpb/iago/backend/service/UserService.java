@@ -6,6 +6,7 @@ import br.ufpb.iago.backend.dto.UserResponseDTO;
 import br.ufpb.iago.backend.exception.BusinessException;
 import br.ufpb.iago.backend.exception.InvalidCredentialsException;
 import br.ufpb.iago.backend.exception.ResourceNotFoundException;
+import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.model.User;
 import br.ufpb.iago.backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,10 +52,6 @@ public class UserService {
 
     @Transactional
     public UserResponseDTO saveUser(UserRequestDTO dto) {
-        if (dto.getRole() == br.ufpb.iago.backend.model.Role.ADMIN) {
-            throw new BusinessException("Não é permitido registrar-se como ADMIN");
-        }
-
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new BusinessException("Email já cadastrado");
         }
@@ -63,7 +60,7 @@ public class UserService {
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setRole(dto.getRole());
+        user.setRole(Role.TOURIST);
 
         return convertToDTO(userRepository.save(user));
     }
@@ -83,6 +80,29 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
         return convertToDTO(user);
+    }
+
+    // ─── PROMOTE ──────────────────────────────────────────────────────────────
+
+    /**
+     * Promove um usuário TOURIST para GUIDE.
+     * Apenas ADMIN pode executar esta operação (controlado pelo SecurityConfig).
+     */
+    @Transactional
+    public UserResponseDTO promoteToGuide(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+
+        if (user.getRole() == Role.GUIDE) {
+            throw new BusinessException("Este usuário já é um GUIDE");
+        }
+
+        if (user.getRole() == Role.ADMIN) {
+            throw new BusinessException("Não é possível alterar o role de um ADMIN");
+        }
+
+        user.setRole(Role.GUIDE);
+        return convertToDTO(userRepository.save(user));
     }
 
     // ─── DELETE ───────────────────────────────────────────────────────────────
