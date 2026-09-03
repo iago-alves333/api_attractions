@@ -26,5 +26,19 @@ services:
       - db
     restart: unless-stopped
 
+  backend:
+    build: .
+    container_name: titureco_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${DB_NAME:-titureco}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-sua_senha_segura}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - db
+    restart: unless-stopped
+
 volumes:
   titureco_data:
