@@ -4,9 +4,11 @@ import br.ufpb.iago.backend.dto.LoginRequestDTO;
 import br.ufpb.iago.backend.dto.UpdateProfileDTO;
 import br.ufpb.iago.backend.dto.UserRequestDTO;
 import br.ufpb.iago.backend.dto.UserResponseDTO;
-import br.ufpb.iago.backend.exception.BusinessException;
+import br.ufpb.iago.backend.exception.AdminRoleChangeException;
+import br.ufpb.iago.backend.exception.AlreadyGuideException;
+import br.ufpb.iago.backend.exception.DuplicateEmailException;
 import br.ufpb.iago.backend.exception.InvalidCredentialsException;
-import br.ufpb.iago.backend.exception.ResourceNotFoundException;
+import br.ufpb.iago.backend.exception.UserNotFoundException;
 import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.model.User;
 import br.ufpb.iago.backend.repository.UserRepository;
@@ -54,7 +56,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO saveUser(UserRequestDTO dto) {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new BusinessException("Email já cadastrado");
+            throw new DuplicateEmailException();
         }
 
         User user = new User();
@@ -79,7 +81,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponseDTO findById(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+                .orElseThrow(UserNotFoundException::new);
         return convertToDTO(user);
     }
 
@@ -92,7 +94,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO updateProfile(UUID userId, UpdateProfileDTO dto) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+                .orElseThrow(UserNotFoundException::new);
 
         if (dto.getName() != null && !dto.getName().isBlank()) {
             user.setName(dto.getName());
@@ -101,7 +103,7 @@ public class UserService {
         if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
             if (!dto.getEmail().equals(user.getEmail()) &&
                     userRepository.findByEmail(dto.getEmail()).isPresent()) {
-                throw new BusinessException("Email já cadastrado por outro usuário");
+                throw new DuplicateEmailException("Email já cadastrado por outro usuário");
             }
             user.setEmail(dto.getEmail());
         }
@@ -122,14 +124,14 @@ public class UserService {
     @Transactional
     public UserResponseDTO promoteToGuide(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+                .orElseThrow(UserNotFoundException::new);
 
         if (user.getRole() == Role.GUIDE) {
-            throw new BusinessException("Este usuário já é um GUIDE");
+            throw new AlreadyGuideException();
         }
 
         if (user.getRole() == Role.ADMIN) {
-            throw new BusinessException("Não é possível alterar o role de um ADMIN");
+            throw new AdminRoleChangeException();
         }
 
         user.setRole(Role.GUIDE);
@@ -141,7 +143,7 @@ public class UserService {
     @Transactional
     public void delete(UUID id) {
         if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Usuário não encontrado");
+            throw new UserNotFoundException();
         }
         userRepository.deleteById(id);
     }

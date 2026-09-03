@@ -2,7 +2,10 @@ package br.ufpb.iago.backend.service;
 
 import br.ufpb.iago.backend.dto.ReviewRequestDTO;
 import br.ufpb.iago.backend.dto.ReviewResponseDTO;
-import br.ufpb.iago.backend.exception.ResourceNotFoundException;
+import br.ufpb.iago.backend.exception.AttractionNotFoundException;
+import br.ufpb.iago.backend.exception.DuplicateReviewException;
+import br.ufpb.iago.backend.exception.ReviewNotFoundException;
+import br.ufpb.iago.backend.exception.UserNotFoundException;
 import br.ufpb.iago.backend.model.Attraction;
 import br.ufpb.iago.backend.model.Review;
 import br.ufpb.iago.backend.model.User;
@@ -41,13 +44,13 @@ public class ReviewService {
     @Transactional
     public ReviewResponseDTO create(ReviewRequestDTO dto, UUID touristId) {
         User tourist = userRepository.findById(touristId)
-                .orElseThrow(() -> new ResourceNotFoundException("Turista não encontrado"));
+                .orElseThrow(UserNotFoundException::new);
 
         Attraction attraction = attractionRepository.findById(dto.getAttractionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Atração não encontrada"));
+                .orElseThrow(AttractionNotFoundException::new);
 
         if (reviewRepository.existsByTouristAndAttraction(tourist, attraction)) {
-            throw new AccessDeniedException("Você já avaliou esta atração");
+            throw new DuplicateReviewException();
         }
         if (!reservationRepository.existsByTouristAndAttractionAndStatus(tourist, attraction, br.ufpb.iago.backend.model.Status.COMPLETED)) {
             throw new AccessDeniedException("Você só pode avaliar atrações que você reservou e completou");
@@ -91,7 +94,7 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public ReviewResponseDTO findById(UUID id) {
         Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review não encontrado"));
+                .orElseThrow(ReviewNotFoundException::new);
         return convertToDTO(review);
     }
 
@@ -100,7 +103,7 @@ public class ReviewService {
     @Transactional
     public ReviewResponseDTO update(UUID id, ReviewRequestDTO dto, UUID touristId) {
         Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review não encontrado"));
+                .orElseThrow(ReviewNotFoundException::new);
 
         if (!review.getTourist().getId().equals(touristId)) {
             throw new AccessDeniedException("Você não tem permissão para editar este review");
@@ -122,7 +125,7 @@ public class ReviewService {
     @Transactional
     public void delete(UUID id, UUID touristId) {
         Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review não encontrado"));
+                .orElseThrow(ReviewNotFoundException::new);
 
         if (!review.getTourist().getId().equals(touristId)) {
             throw new AccessDeniedException("Você não tem permissão para deletar este review");

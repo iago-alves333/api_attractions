@@ -1,6 +1,7 @@
 package br.ufpb.iago.backend.service;
 
-import br.ufpb.iago.backend.exception.BusinessException;
+import br.ufpb.iago.backend.exception.ExpiredRefreshTokenException;
+import br.ufpb.iago.backend.exception.InvalidRefreshTokenException;
 import br.ufpb.iago.backend.model.RefreshToken;
 import br.ufpb.iago.backend.model.User;
 import br.ufpb.iago.backend.repository.RefreshTokenRepository;
@@ -44,10 +45,10 @@ public class RefreshTokenService {
     @Transactional(readOnly = true)
     public RefreshToken validateRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new BusinessException("Refresh token inválido"));
+                .orElseThrow(InvalidRefreshTokenException::new);
 
         if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new BusinessException("Refresh token expirado");
+            throw new ExpiredRefreshTokenException();
         }
 
         return refreshToken;

@@ -2,7 +2,8 @@ package br.ufpb.iago.backend.service;
 
 import br.ufpb.iago.backend.dto.AttractionRequestDTO;
 import br.ufpb.iago.backend.dto.AttractionResponseDTO;
-import br.ufpb.iago.backend.exception.ResourceNotFoundException;
+import br.ufpb.iago.backend.exception.AttractionNotFoundException;
+import br.ufpb.iago.backend.exception.GuideNotFoundException;
 import br.ufpb.iago.backend.model.Attraction;
 import br.ufpb.iago.backend.model.User;
 import br.ufpb.iago.backend.repository.AttractionRepository;
@@ -41,7 +42,7 @@ public class AttractionService {
     @Transactional
     public AttractionResponseDTO create(AttractionRequestDTO dto, UUID guideId) {
         User guide = userRepository.findById(guideId)
-                .orElseThrow(() -> new ResourceNotFoundException("Guia não encontrado"));
+                .orElseThrow(GuideNotFoundException::new);
 
         Attraction attraction = new Attraction();
         attraction.setGuide(guide);
@@ -61,7 +62,7 @@ public class AttractionService {
     @Transactional(readOnly = true)
     public AttractionResponseDTO findById(UUID id) {
         Attraction attraction = attractionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Atração não encontrada"));
+                .orElseThrow(AttractionNotFoundException::new);
         return convertToDTO(attraction);
     }
 
@@ -70,7 +71,7 @@ public class AttractionService {
     @Transactional
     public AttractionResponseDTO update(UUID id, AttractionRequestDTO dto, UUID guideId) {
         Attraction attraction = attractionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Atração não encontrada"));
+                .orElseThrow(AttractionNotFoundException::new);
 
         if (!attraction.getGuide().getId().equals(guideId)) {
             throw new AccessDeniedException("Você não tem permissão para editar esta atração");
@@ -85,7 +86,7 @@ public class AttractionService {
     @Transactional
     public void delete(UUID id, UUID guideId) {
         Attraction attraction = attractionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Atração não encontrada"));
+                .orElseThrow(AttractionNotFoundException::new);
 
         if (!attraction.getGuide().getId().equals(guideId)) {
             throw new AccessDeniedException("Você não tem permissão para deletar esta atração");
