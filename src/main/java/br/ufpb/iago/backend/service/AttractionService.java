@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Service
 public class AttractionService {
 
@@ -50,11 +53,9 @@ public class AttractionService {
     // ─── READ ─────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<AttractionResponseDTO> findAll() {
-        return attractionRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<AttractionResponseDTO> findAll(Pageable pageable) {
+        return attractionRepository.findAll(pageable)
+                .map(this::convertToDTO);
     }
 
     @Transactional(readOnly = true)
@@ -142,7 +143,9 @@ public class AttractionService {
                 attraction.getPrice(),
                 attraction.getAvailableSpots(),
                 lat,
-                lon
+                lon,
+                attraction.getRatingAverage() != null ? attraction.getRatingAverage() : 0.0,
+                attraction.getReviewCount() != null ? attraction.getReviewCount() : 0
         );
     }
 }

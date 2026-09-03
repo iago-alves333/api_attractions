@@ -1,6 +1,7 @@
 package br.ufpb.iago.backend.service;
 
 import br.ufpb.iago.backend.dto.LoginRequestDTO;
+import br.ufpb.iago.backend.dto.UpdateProfileDTO;
 import br.ufpb.iago.backend.dto.UserRequestDTO;
 import br.ufpb.iago.backend.dto.UserResponseDTO;
 import br.ufpb.iago.backend.exception.BusinessException;
@@ -80,6 +81,36 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
         return convertToDTO(user);
+    }
+
+    // ─── UPDATE PROFILE ───────────────────────────────────────────────────────
+
+    /**
+     * Atualiza o perfil do próprio usuário autenticado.
+     * Apenas campos não-nulos são atualizados (partial update).
+     */
+    @Transactional
+    public UserResponseDTO updateProfile(UUID userId, UpdateProfileDTO dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+
+        if (dto.getName() != null && !dto.getName().isBlank()) {
+            user.setName(dto.getName());
+        }
+
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+            if (!dto.getEmail().equals(user.getEmail()) &&
+                    userRepository.findByEmail(dto.getEmail()).isPresent()) {
+                throw new BusinessException("Email já cadastrado por outro usuário");
+            }
+            user.setEmail(dto.getEmail());
+        }
+
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+
+        return convertToDTO(userRepository.save(user));
     }
 
     // ─── PROMOTE ──────────────────────────────────────────────────────────────

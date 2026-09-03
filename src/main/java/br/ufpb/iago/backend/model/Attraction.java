@@ -41,10 +41,8 @@ public class Attraction {
     @Column(nullable = false)
     private int availableSpots;
 
-    @Min(1)
-    @Max(5)
     @Column(name = "rating_average", nullable = false)
-    private Double ratingAverage;
+    private Double ratingAverage = 0.0;
 
     @Column(name = "review_count", nullable = false)
     private Integer reviewCount = 0;
@@ -116,7 +114,9 @@ public class Attraction {
     public Double getRatingAverage() {
         return ratingAverage;
     }
-    public void setRatingAverage(Double ratingAverage) {}
+    public void setRatingAverage(Double ratingAverage) {
+        this.ratingAverage = ratingAverage;
+    }
 
     public Point getLocation() {
         return location;

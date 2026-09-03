@@ -125,4 +125,18 @@ public class AuthController {
         UserResponseDTO user = userService.findById(currentUser.getId());
         return ResponseEntity.ok(user);
     }
+
+    /**
+     * PUT /api/v1/auth/me
+     * Atualiza o perfil do usuário autenticado (nome, email, senha).
+     * Apenas campos preenchidos serão atualizados.
+     */
+    @PutMapping("/me")
+    public ResponseEntity<UserResponseDTO> updateProfile(
+            @Valid @RequestBody UpdateProfileDTO dto,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+
+        UserResponseDTO response = userService.updateProfile(currentUser.getId(), dto);
+        return ResponseEntity.ok(response);
+    }
 }

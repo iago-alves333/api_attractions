@@ -48,7 +48,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/register").permitAll()
                         .requestMatchers("/api/v1/auth/login").permitAll()
                         .requestMatchers("/api/v1/auth/refresh").permitAll()
-                        .requestMatchers("/api/v1/auth/logout").permitAll()
 
                         // Attractions: leitura pública, escrita restrita a GUIDE
                         .requestMatchers(HttpMethod.GET, "/api/v1/attractions/**").permitAll()

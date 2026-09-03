@@ -12,5 +12,7 @@ public record AttractionResponseDTO(
         BigDecimal price,
         int availableSpots,
         double latitude,
-        double longitude
+        double longitude,
+        double ratingAverage,
+        int reviewCount
 ) {}

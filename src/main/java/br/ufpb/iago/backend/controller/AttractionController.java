@@ -5,6 +5,9 @@ import br.ufpb.iago.backend.dto.AttractionResponseDTO;
 import br.ufpb.iago.backend.security.CustomUserDetails;
 import br.ufpb.iago.backend.service.AttractionService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -56,8 +59,9 @@ public class AttractionController {
     // ─── ENDPOINTS DE BUSCA E LISTAGEM (PÚBLICOS) ─────────────────────────────
 
     @GetMapping
-    public ResponseEntity<List<AttractionResponseDTO>> findAll() {
-        return ResponseEntity.ok(attractionService.findAll());
+    public ResponseEntity<Page<AttractionResponseDTO>> findAll(
+            @PageableDefault(size = 10, sort = "title") Pageable pageable) {
+        return ResponseEntity.ok(attractionService.findAll(pageable));
     }
 
     @GetMapping("/{id}")
