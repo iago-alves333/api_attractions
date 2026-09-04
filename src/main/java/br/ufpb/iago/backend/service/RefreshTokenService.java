@@ -16,12 +16,13 @@ import java.util.UUID;
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
+    private final long refreshExpirationMs;
 
-    @Value("${jwt.refresh-expiration-ms}")
-    private long refreshExpirationMs;
-
-    public RefreshTokenService(RefreshTokenRepository refreshTokenRepository) {
+    public RefreshTokenService(
+            RefreshTokenRepository refreshTokenRepository,
+            @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs) {
         this.refreshTokenRepository = refreshTokenRepository;
+        this.refreshExpirationMs = refreshExpirationMs;
     }
 
     /**
@@ -34,7 +35,6 @@ public class RefreshTokenService {
         refreshToken.setUser(user);
         refreshToken.setToken(UUID.randomUUID().toString());
         refreshToken.setExpiresAt(LocalDateTime.now().plusNanos(refreshExpirationMs * 1_000_000L));
-
         return refreshTokenRepository.save(refreshToken);
     }
 
@@ -46,11 +46,9 @@ public class RefreshTokenService {
     public RefreshToken validateRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(InvalidRefreshTokenException::new);
-
         if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new ExpiredRefreshTokenException();
         }
-
         return refreshToken;
     }
 
