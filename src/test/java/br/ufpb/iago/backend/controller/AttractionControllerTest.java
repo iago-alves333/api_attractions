@@ -109,9 +109,11 @@ class AttractionControllerTest {
     @Test
     @DisplayName("Get Nearby deve retornar lista")
     void testGetNearby() {
-        when(attractionService.getNearbyAttractions(10.0, 10.0, 50.0)).thenReturn(List.of(responseDTO));
+        Pageable pageable = Pageable.unpaged();
+        Page<AttractionResponseDTO> page = new PageImpl<>(List.of(responseDTO));
+        when(attractionService.getNearbyAttractions(10.0, 10.0, 50.0, pageable)).thenReturn(page);
 
-        ResponseEntity<List<AttractionResponseDTO>> response = attractionController.getNearby(10.0, 10.0, 50.0);
+        ResponseEntity<Page<AttractionResponseDTO>> response = attractionController.getNearby(10.0, 10.0, 50.0, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -119,9 +121,11 @@ class AttractionControllerTest {
     @Test
     @DisplayName("Search deve retornar lista")
     void testSearch() {
-        when(attractionService.searchAttractions("kw", 10.0, 10.0, 50.0)).thenReturn(List.of(responseDTO));
+        Pageable pageable = Pageable.unpaged();
+        Page<AttractionResponseDTO> page = new PageImpl<>(List.of(responseDTO));
+        when(attractionService.searchAttractions("kw", 10.0, 10.0, 50.0, pageable)).thenReturn(page);
 
-        ResponseEntity<List<AttractionResponseDTO>> response = attractionController.search("kw", 10.0, 10.0, 50.0);
+        ResponseEntity<Page<AttractionResponseDTO>> response = attractionController.search("kw", 10.0, 10.0, 50.0, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }

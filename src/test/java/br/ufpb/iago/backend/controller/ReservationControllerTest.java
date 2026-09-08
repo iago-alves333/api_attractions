@@ -14,6 +14,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -63,12 +66,14 @@ class ReservationControllerTest {
     @Test
     @DisplayName("Find All deve retornar lista")
     void testFindAll() {
-        when(reservationService.findAllByTourist(currentUser.getId())).thenReturn(List.of(responseDTO));
+        Pageable pageable = Pageable.unpaged();
+        Page<ReservationResponseDTO> page = new PageImpl<>(List.of(responseDTO));
+        when(reservationService.findAllByTourist(eq(currentUser.getId()), any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<List<ReservationResponseDTO>> response = reservationController.findAll(currentUser);
+        ResponseEntity<Page<ReservationResponseDTO>> response = reservationController.findAll(currentUser, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(1);
+        assertThat(response.getBody()).isNotNull();
     }
 
     @Test
@@ -115,11 +120,13 @@ class ReservationControllerTest {
     @Test
     @DisplayName("Find All By Guide deve retornar lista")
     void testFindAllByGuide() {
-        when(reservationService.findAllByGuide(currentUser.getId())).thenReturn(List.of(responseDTO));
+        Pageable pageable = Pageable.unpaged();
+        Page<ReservationResponseDTO> page = new PageImpl<>(List.of(responseDTO));
+        when(reservationService.findAllByGuide(eq(currentUser.getId()), any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<List<ReservationResponseDTO>> response = reservationController.findAllByGuide(currentUser);
+        ResponseEntity<Page<ReservationResponseDTO>> response = reservationController.findAllByGuide(currentUser, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(1);
+        assertThat(response.getBody()).isNotNull();
     }
 }

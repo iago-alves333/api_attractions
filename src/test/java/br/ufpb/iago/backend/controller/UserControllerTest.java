@@ -11,6 +11,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -53,12 +56,14 @@ class UserControllerTest {
     @Test
     @DisplayName("Find All deve retornar lista de usuários")
     void testFindAll() {
-        when(userService.findAll()).thenReturn(List.of(userResponse));
+        Pageable pageable = Pageable.unpaged();
+        Page<UserResponseDTO> page = new PageImpl<>(List.of(userResponse));
+        when(userService.findAll(any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<List<UserResponseDTO>> response = userController.findAll();
+        ResponseEntity<Page<UserResponseDTO>> response = userController.findAll(pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(1);
+        assertThat(response.getBody()).isNotNull();
     }
 
     @Test

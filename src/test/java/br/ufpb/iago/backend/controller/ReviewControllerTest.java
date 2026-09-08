@@ -13,6 +13,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -64,21 +67,27 @@ class ReviewControllerTest {
     @Test
     @DisplayName("Find All deve retornar lista")
     void testFindAll() {
-        when(reviewService.findAll()).thenReturn(List.of(responseDTO));
+        Pageable pageable = Pageable.unpaged();
+        Page<ReviewResponseDTO> page = new PageImpl<>(List.of(responseDTO));
+        when(reviewService.findAll(any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<List<ReviewResponseDTO>> response = reviewController.findAll();
+        ResponseEntity<Page<ReviewResponseDTO>> response = reviewController.findAll(pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
     }
 
     @Test
     @DisplayName("Find By Attraction deve retornar lista")
     void testFindByAttraction() {
-        when(reviewService.findByAttraction(attrId)).thenReturn(List.of(responseDTO));
+        Pageable pageable = Pageable.unpaged();
+        Page<ReviewResponseDTO> page = new PageImpl<>(List.of(responseDTO));
+        when(reviewService.findByAttraction(eq(attrId), any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<List<ReviewResponseDTO>> response = reviewController.findByAttraction(attrId);
+        ResponseEntity<Page<ReviewResponseDTO>> response = reviewController.findByAttraction(attrId, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
     }
 
     @Test
