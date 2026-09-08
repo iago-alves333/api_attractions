@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -318,13 +322,14 @@ class ReservationServiceTest {
             other.setTourist(anotherUser);
             other.setStatus(Status.CONFIRMED);
 
-            when(reservationRepository.findAllByAttractionGuideId(guide.getId())).thenReturn(List.of(reservation, other));
+            Page<Reservation> page = new PageImpl<>(List.of(reservation, other));
+            when(reservationRepository.findAllByAttractionGuideId(eq(guide.getId()), any(Pageable.class))).thenReturn(page);
 
-            List<ReservationResponseDTO> result = reservationService.findAllByGuide(guide.getId());
+            Page<ReservationResponseDTO> result = reservationService.findAllByGuide(guide.getId(), Pageable.unpaged());
 
-            assertEquals(2, result.size());
-            assertEquals(Status.PENDING, result.get(0).status());
-            assertEquals(Status.CONFIRMED, result.get(1).status());
+            assertEquals(2, result.getTotalElements());
+            assertEquals(Status.PENDING, result.getContent().get(0).status());
+            assertEquals(Status.CONFIRMED, result.getContent().get(1).status());
         }
     }
 
@@ -339,12 +344,13 @@ class ReservationServiceTest {
             other.setTourist(anotherUser);
             other.setStatus(Status.CONFIRMED);
 
+            Page<Reservation> page = new PageImpl<>(List.of(reservation, other));
             when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
-            when(reservationRepository.findAllByAttractionId(attraction.getId())).thenReturn(List.of(reservation, other));
+            when(reservationRepository.findAllByAttractionId(eq(attraction.getId()), any(Pageable.class))).thenReturn(page);
 
-            List<ReservationResponseDTO> result = reservationService.findAllByAttraction(attraction.getId(), guide.getId());
+            Page<ReservationResponseDTO> result = reservationService.findAllByAttraction(attraction.getId(), guide.getId(), Pageable.unpaged());
 
-            assertEquals(2, result.size());
+            assertEquals(2, result.getTotalElements());
         }
 
         @Test
@@ -353,7 +359,7 @@ class ReservationServiceTest {
             when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
 
             assertThrows(AccessDeniedException.class,
-                    () -> reservationService.findAllByAttraction(attraction.getId(), anotherUser.getId()));
+                    () -> reservationService.findAllByAttraction(attraction.getId(), anotherUser.getId(), Pageable.unpaged()));
         }
     }
 }

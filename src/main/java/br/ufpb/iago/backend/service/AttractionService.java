@@ -96,25 +96,19 @@ public class AttractionService {
     }
 
     // ─── SEARCH ───────────────────────────────────────────────────────────────
-    public List<AttractionResponseDTO> searchByTitle(String title) {
-        return attractionRepository.findByTitleContainingIgnoreCase(title)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<AttractionResponseDTO> searchByTitle(String title, Pageable pageable) {
+        return attractionRepository.findByTitleContainingIgnoreCase(title, pageable)
+                .map(this::convertToDTO);
     }
-    public List<AttractionResponseDTO> getNearbyAttractions(double lat,double lon, double radiusKm){
+    public Page<AttractionResponseDTO> getNearbyAttractions(double lat,double lon, double radiusKm, Pageable pageable){
         double radiusInMeters = (radiusKm > 0 ? radiusKm : 50.0) * 1000;
-        List<Attraction> attractions = attractionRepository.findNearby(lat, lon, radiusInMeters);
-        return attractions.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        Page<Attraction> attractions = attractionRepository.findNearby(lat, lon, radiusInMeters, pageable);
+        return attractions.map(this::convertToDTO);
     }
-    public List<AttractionResponseDTO> searchAttractions(String keyword, double lat, double lon, double radiusKm) {
+    public Page<AttractionResponseDTO> searchAttractions(String keyword, double lat, double lon, double radiusKm, Pageable pageable) {
         double radiusInMeters = (radiusKm > 0 ? radiusKm : 50.0) * 1000;
-        List<Attraction> attractions = attractionRepository.searchByKeywordAndLocation(keyword, lat, lon, radiusInMeters);
-        return attractions.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        Page<Attraction> attractions = attractionRepository.searchByKeywordAndLocation(keyword, lat, lon, radiusInMeters, pageable);
+        return attractions.map(this::convertToDTO);
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────

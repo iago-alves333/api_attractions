@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Service
 public class UserService {
 
@@ -71,11 +74,9 @@ public class UserService {
     // ─── READ ─────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<UserResponseDTO> findAll() {
-        return userRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<UserResponseDTO> findAll(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(this::convertToDTO);
     }
 
     @Transactional(readOnly = true)

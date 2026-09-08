@@ -5,12 +5,15 @@ import br.ufpb.iago.backend.dto.ReviewResponseDTO;
 import br.ufpb.iago.backend.security.CustomUserDetails;
 import br.ufpb.iago.backend.service.ReviewService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -41,8 +44,9 @@ public class ReviewController {
      * Lista todos os reviews. Acesso público.
      */
     @GetMapping
-    public ResponseEntity<List<ReviewResponseDTO>> findAll() {
-        return ResponseEntity.ok(reviewService.findAll());
+    public ResponseEntity<Page<ReviewResponseDTO>> findAll(
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(reviewService.findAll(pageable));
     }
 
     /**
@@ -50,8 +54,10 @@ public class ReviewController {
      * Lista todos os reviews de uma atração específica. Acesso público.
      */
     @GetMapping("/attraction/{attractionId}")
-    public ResponseEntity<List<ReviewResponseDTO>> findByAttraction(@PathVariable UUID attractionId) {
-        return ResponseEntity.ok(reviewService.findByAttraction(attractionId));
+    public ResponseEntity<Page<ReviewResponseDTO>> findByAttraction(
+            @PathVariable UUID attractionId,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(reviewService.findByAttraction(attractionId, pageable));
     }
 
     /**

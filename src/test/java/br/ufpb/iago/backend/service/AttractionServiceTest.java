@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
@@ -247,24 +248,26 @@ class AttractionServiceTest {
         @Test
         @DisplayName("searchByTitle() deve retornar lista")
         void searchByTitle_sucesso() {
-            when(attractionRepository.findByTitleContainingIgnoreCase("Praia")).thenReturn(List.of(attraction));
+            Page<Attraction> page = new PageImpl<>(List.of(attraction));
+            when(attractionRepository.findByTitleContainingIgnoreCase(eq("Praia"), any(Pageable.class))).thenReturn(page);
 
-            List<AttractionResponseDTO> result = attractionService.searchByTitle("Praia");
+            Page<AttractionResponseDTO> result = attractionService.searchByTitle("Praia", Pageable.unpaged());
 
-            assertEquals(1, result.size());
-            assertEquals("Praia", result.get(0).title());
+            assertEquals(1, result.getTotalElements());
+            assertEquals("Praia", result.getContent().get(0).title());
         }
 
         @Test
         @DisplayName("getNearbyAttractions() deve usar o raio default se raio for negativo ou zero")
         void getNearbyAttractions_usaDefaultRadius() {
             double defaultRadiusMeters = 50.0 * 1000;
-            when(attractionRepository.findNearby(-7.1, -34.8, defaultRadiusMeters)).thenReturn(List.of(attraction));
+            Page<Attraction> page = new PageImpl<>(List.of(attraction));
+            when(attractionRepository.findNearby(eq(-7.1), eq(-34.8), eq(defaultRadiusMeters), any(Pageable.class))).thenReturn(page);
 
-            List<AttractionResponseDTO> result = attractionService.getNearbyAttractions(-7.1, -34.8, 0);
+            Page<AttractionResponseDTO> result = attractionService.getNearbyAttractions(-7.1, -34.8, 0, Pageable.unpaged());
 
-            assertEquals(1, result.size());
-            verify(attractionRepository).findNearby(-7.1, -34.8, defaultRadiusMeters);
+            assertEquals(1, result.getTotalElements());
+            verify(attractionRepository).findNearby(eq(-7.1), eq(-34.8), eq(defaultRadiusMeters), any(Pageable.class));
         }
 
         @Test
@@ -272,24 +275,26 @@ class AttractionServiceTest {
         void getNearbyAttractions_usaRaioFornecido() {
             double radiusKm = 10.0;
             double radiusMeters = 10.0 * 1000;
-            when(attractionRepository.findNearby(-7.1, -34.8, radiusMeters)).thenReturn(List.of(attraction));
+            Page<Attraction> page = new PageImpl<>(List.of(attraction));
+            when(attractionRepository.findNearby(eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class))).thenReturn(page);
 
-            List<AttractionResponseDTO> result = attractionService.getNearbyAttractions(-7.1, -34.8, radiusKm);
+            Page<AttractionResponseDTO> result = attractionService.getNearbyAttractions(-7.1, -34.8, radiusKm, Pageable.unpaged());
 
-            assertEquals(1, result.size());
-            verify(attractionRepository).findNearby(-7.1, -34.8, radiusMeters);
+            assertEquals(1, result.getTotalElements());
+            verify(attractionRepository).findNearby(eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class));
         }
 
         @Test
         @DisplayName("searchAttractions() deve buscar por termo e raio")
         void searchAttractions_sucesso() {
             double radiusMeters = 20.0 * 1000;
-            when(attractionRepository.searchByKeywordAndLocation("Praia", -7.1, -34.8, radiusMeters)).thenReturn(List.of(attraction));
+            Page<Attraction> page = new PageImpl<>(List.of(attraction));
+            when(attractionRepository.searchByKeywordAndLocation(eq("Praia"), eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class))).thenReturn(page);
 
-            List<AttractionResponseDTO> result = attractionService.searchAttractions("Praia", -7.1, -34.8, 20.0);
+            Page<AttractionResponseDTO> result = attractionService.searchAttractions("Praia", -7.1, -34.8, 20.0, Pageable.unpaged());
 
-            assertEquals(1, result.size());
-            verify(attractionRepository).searchByKeywordAndLocation("Praia", -7.1, -34.8, radiusMeters);
+            assertEquals(1, result.getTotalElements());
+            verify(attractionRepository).searchByKeywordAndLocation(eq("Praia"), eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class));
         }
     }
 

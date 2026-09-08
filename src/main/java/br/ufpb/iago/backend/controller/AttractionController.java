@@ -74,12 +74,13 @@ public class AttractionController {
      * Busca atrações baseadas em um raio de distância usando PostGIS.
      */
     @GetMapping("/nearby")
-    public ResponseEntity<List<AttractionResponseDTO>> getNearby(
+    public ResponseEntity<Page<AttractionResponseDTO>> getNearby(
             @RequestParam double lat,
             @RequestParam double lon,
-            @RequestParam(defaultValue = "10.0") double radiusKm
+            @RequestParam(defaultValue = "10.0") double radiusKm,
+            @PageableDefault(size = 10) Pageable pageable
     ) {
-        return ResponseEntity.ok(attractionService.getNearbyAttractions(lat, lon, radiusKm));
+        return ResponseEntity.ok(attractionService.getNearbyAttractions(lat, lon, radiusKm, pageable));
     }
 
     /**
@@ -87,12 +88,13 @@ public class AttractionController {
      * Busca combinada por título/descrição e raio de distância.
      */
     @GetMapping("/search")
-    public ResponseEntity<List<AttractionResponseDTO>> search(
+    public ResponseEntity<Page<AttractionResponseDTO>> search(
             @RequestParam String keyword,
             @RequestParam double lat,
             @RequestParam double lon,
-            @RequestParam(defaultValue = "50.0") double radiusKm
+            @RequestParam(defaultValue = "50.0") double radiusKm,
+            @PageableDefault(size = 10) Pageable pageable
     ) {
-        return ResponseEntity.ok(attractionService.searchAttractions(keyword, lat, lon, radiusKm));
+        return ResponseEntity.ok(attractionService.searchAttractions(keyword, lat, lon, radiusKm, pageable));
     }
 }

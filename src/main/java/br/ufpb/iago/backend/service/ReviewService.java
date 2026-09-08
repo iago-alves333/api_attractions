@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Service
 public class ReviewService {
 
@@ -76,19 +79,15 @@ public class ReviewService {
     // ─── READ ─────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<ReviewResponseDTO> findAll() {
-        return reviewRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<ReviewResponseDTO> findAll(Pageable pageable) {
+        return reviewRepository.findAll(pageable)
+                .map(this::convertToDTO);
     }
 
     @Transactional(readOnly = true)
-    public List<ReviewResponseDTO> findByAttraction(UUID attractionId) {
-        return reviewRepository.findAllByAttractionId(attractionId)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<ReviewResponseDTO> findByAttraction(UUID attractionId, Pageable pageable) {
+        return reviewRepository.findAllByAttractionId(attractionId, pageable)
+                .map(this::convertToDTO);
     }
 
     @Transactional(readOnly = true)

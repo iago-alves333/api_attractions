@@ -29,6 +29,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -203,23 +207,25 @@ class ReviewServiceTest {
         @Test
         @DisplayName("findAll() deve retornar lista de reviews")
         void findAll_sucesso() {
-            when(reviewRepository.findAll()).thenReturn(List.of(review));
+            Page<Review> page = new PageImpl<>(List.of(review));
+            when(reviewRepository.findAll(any(Pageable.class))).thenReturn(page);
 
-            List<ReviewResponseDTO> result = reviewService.findAll();
+            Page<ReviewResponseDTO> result = reviewService.findAll(Pageable.unpaged());
 
-            assertEquals(1, result.size());
-            assertEquals(review.getId(), result.get(0).id());
+            assertEquals(1, result.getTotalElements());
+            assertEquals(review.getId(), result.getContent().get(0).id());
         }
 
         @Test
         @DisplayName("findByAttraction() deve retornar lista de reviews da atração")
         void findByAttraction_sucesso() {
-            when(reviewRepository.findAllByAttractionId(attraction.getId())).thenReturn(List.of(review));
+            Page<Review> page = new PageImpl<>(List.of(review));
+            when(reviewRepository.findAllByAttractionId(eq(attraction.getId()), any(Pageable.class))).thenReturn(page);
 
-            List<ReviewResponseDTO> result = reviewService.findByAttraction(attraction.getId());
+            Page<ReviewResponseDTO> result = reviewService.findByAttraction(attraction.getId(), Pageable.unpaged());
 
-            assertEquals(1, result.size());
-            assertEquals(review.getId(), result.get(0).id());
+            assertEquals(1, result.getTotalElements());
+            assertEquals(review.getId(), result.getContent().get(0).id());
         }
 
         @Test

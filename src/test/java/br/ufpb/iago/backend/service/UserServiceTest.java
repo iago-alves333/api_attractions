@@ -27,6 +27,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -187,22 +191,23 @@ class UserServiceTest {
         @Test
         @DisplayName("Deve retornar lista de todos os usuários")
         void findAll_retornaListaDeUsers() {
-            when(userRepository.findAll()).thenReturn(List.of(tourist, guide, admin));
+            Page<User> page = new PageImpl<>(List.of(tourist, guide, admin));
+            when(userRepository.findAll(any(Pageable.class))).thenReturn(page);
 
-            List<UserResponseDTO> result = userService.findAll();
+            Page<UserResponseDTO> result = userService.findAll(Pageable.unpaged());
 
-            assertEquals(3, result.size());
-            assertEquals("Turista", result.get(0).name());
-            assertEquals("Guia", result.get(1).name());
-            assertEquals("Admin", result.get(2).name());
+            assertEquals(3, result.getTotalElements());
+            assertEquals("Turista", result.getContent().get(0).name());
+            assertEquals("Guia", result.getContent().get(1).name());
+            assertEquals("Admin", result.getContent().get(2).name());
         }
 
         @Test
         @DisplayName("Deve retornar lista vazia quando não há usuários")
         void findAll_semUsers_retornaListaVazia() {
-            when(userRepository.findAll()).thenReturn(List.of());
+            when(userRepository.findAll(any(Pageable.class))).thenReturn(Page.empty());
 
-            List<UserResponseDTO> result = userService.findAll();
+            Page<UserResponseDTO> result = userService.findAll(Pageable.unpaged());
 
             assertTrue(result.isEmpty());
         }

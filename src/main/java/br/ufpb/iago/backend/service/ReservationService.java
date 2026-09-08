@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Service
 public class ReservationService {
 
@@ -83,12 +86,10 @@ public class ReservationService {
     // ─── READ ─────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<ReservationResponseDTO> findAllByTourist(UUID touristId) {
+    public Page<ReservationResponseDTO> findAllByTourist(UUID touristId, Pageable pageable) {
         // Delega a filtragem diretamente para o banco de dados
-        return reservationRepository.findAllByTouristId(touristId)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return reservationRepository.findAllByTouristId(touristId, pageable)
+                .map(this::convertToDTO);
     }
 
     @Transactional(readOnly = true)
@@ -172,13 +173,11 @@ public class ReservationService {
     // ─── GUIDE READ ──────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<ReservationResponseDTO> findAllByGuide(UUID guideId) {
-        return reservationRepository.findAllByAttractionGuideId(guideId)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<ReservationResponseDTO> findAllByGuide(UUID guideId, Pageable pageable) {
+        return reservationRepository.findAllByAttractionGuideId(guideId, pageable)
+                .map(this::convertToDTO);
     }
-    public List<ReservationResponseDTO> findAllByAttraction(UUID attractionId, UUID guideId) {
+    public Page<ReservationResponseDTO> findAllByAttraction(UUID attractionId, UUID guideId, Pageable pageable) {
         Attraction attraction = attractionRepository.findById(attractionId)
                 .orElseThrow(AttractionNotFoundException::new);
 
@@ -186,10 +185,8 @@ public class ReservationService {
             throw new AccessDeniedException("Apenas o guia da atração pode ver suas reservas");
         }
 
-        return reservationRepository.findAllByAttractionId(attractionId)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return reservationRepository.findAllByAttractionId(attractionId, pageable)
+                .map(this::convertToDTO);
     }
 
     // ─── HELPER ───────────────────────────────────────────────────────────────

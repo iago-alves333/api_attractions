@@ -5,12 +5,14 @@ import br.ufpb.iago.backend.dto.ReservationResponseDTO;
 import br.ufpb.iago.backend.security.CustomUserDetails;
 import br.ufpb.iago.backend.service.ReservationService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -41,10 +43,11 @@ public class ReservationController {
      * Lista todas as reservas do turista autenticado.
      */
     @GetMapping
-    public ResponseEntity<List<ReservationResponseDTO>> findAll(
-            @AuthenticationPrincipal CustomUserDetails currentUser) {
+    public ResponseEntity<Page<ReservationResponseDTO>> findAll(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
 
-        return ResponseEntity.ok(reservationService.findAllByTourist(currentUser.getId()));
+        return ResponseEntity.ok(reservationService.findAllByTourist(currentUser.getId(), pageable));
     }
 
     /**
@@ -98,9 +101,23 @@ public class ReservationController {
      * Lista todas as reservas das atrações do guia autenticado.
      */
     @GetMapping("/guide")
-    public ResponseEntity<List<ReservationResponseDTO>> findAllByGuide(
-            @AuthenticationPrincipal CustomUserDetails currentUser) {
+    public ResponseEntity<Page<ReservationResponseDTO>> findAllByGuide(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
 
-        return ResponseEntity.ok(reservationService.findAllByGuide(currentUser.getId()));
+        return ResponseEntity.ok(reservationService.findAllByGuide(currentUser.getId(), pageable));
+    }
+
+    /**
+     * GET /api/v1/reservations/guide/attractions/{attractionId}
+     * Lista todas as reservas de uma atração específica do guia autenticado.
+     */
+    @GetMapping("/guide/attractions/{attractionId}")
+    public ResponseEntity<Page<ReservationResponseDTO>> findAllByAttraction(
+            @PathVariable UUID attractionId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
+
+        return ResponseEntity.ok(reservationService.findAllByAttraction(attractionId, currentUser.getId(), pageable));
     }
 }
