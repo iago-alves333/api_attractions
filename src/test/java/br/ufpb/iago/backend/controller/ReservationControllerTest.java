@@ -48,7 +48,7 @@ class ReservationControllerTest {
         currentUser = new CustomUserDetails(user);
         
         resId = UUID.randomUUID();
-        responseDTO = new ReservationResponseDTO(resId, UUID.randomUUID(), UUID.randomUUID(), Status.PENDING, LocalDateTime.now(), LocalDateTime.now());
+        responseDTO = new ReservationResponseDTO(resId, UUID.randomUUID(), "Tourist Test", UUID.randomUUID(), "Attraction Test", Status.PENDING, LocalDateTime.now(), LocalDateTime.now());
     }
 
     @Test

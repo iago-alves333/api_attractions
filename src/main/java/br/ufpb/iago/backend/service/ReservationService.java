@@ -195,7 +195,9 @@ public class ReservationService {
         return new ReservationResponseDTO(
                 reservation.getId(),
                 reservation.getTourist().getId(),
+                reservation.getTourist().getName(),
                 reservation.getAttraction().getId(),
+                reservation.getAttraction().getTitle(),
                 reservation.getStatus(),
                 reservation.getReservedFor(),
                 reservation.getCreatedAt()

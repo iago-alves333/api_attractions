@@ -84,17 +84,20 @@ public class AttractionController {
     }
 
     /**
-     * GET /api/v1/attractions/search?keyword=X&lat=Y&lon=Z&radiusKm=W
-     * Busca combinada por título/descrição e raio de distância.
+     * GET /api/v1/attractions/search?keyword=X[&lat=Y&lon=Z&radiusKm=W]
+     * Busca por título/descrição, opcionalmente filtrada por raio de distância.
      */
     @GetMapping("/search")
     public ResponseEntity<Page<AttractionResponseDTO>> search(
             @RequestParam String keyword,
-            @RequestParam double lat,
-            @RequestParam double lon,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lon,
             @RequestParam(defaultValue = "50.0") double radiusKm,
             @PageableDefault(size = 10) Pageable pageable
     ) {
-        return ResponseEntity.ok(attractionService.searchAttractions(keyword, lat, lon, radiusKm, pageable));
+        if (lat != null && lon != null) {
+            return ResponseEntity.ok(attractionService.searchAttractions(keyword, lat, lon, radiusKm, pageable));
+        }
+        return ResponseEntity.ok(attractionService.searchByTitle(keyword, pageable));
     }
 }

@@ -8,7 +8,9 @@ import java.util.UUID;
 public record ReservationResponseDTO (
         UUID id,
         UUID touristId,
+        String touristName,
         UUID attractionID,
+        String attractionTitle,
         Status status,
         LocalDateTime reservedFor,
         LocalDateTime createdAt
