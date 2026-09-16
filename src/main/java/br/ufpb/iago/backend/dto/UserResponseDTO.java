@@ -10,4 +10,4 @@ public record UserResponseDTO (
     String name,
     Role role,
     LocalDateTime createdAt
-) {}
+) implements java.io.Serializable {}

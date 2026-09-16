@@ -15,4 +15,4 @@ public record AttractionResponseDTO(
         double longitude,
         double ratingAverage,
         int reviewCount
-) {}
+) implements java.io.Serializable {}

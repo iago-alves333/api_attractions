@@ -14,4 +14,4 @@ public record ReservationResponseDTO (
         Status status,
         LocalDateTime reservedFor,
         LocalDateTime createdAt
-){ }
+) implements java.io.Serializable { }

@@ -52,9 +52,9 @@ public class SecurityConfig {
 
                         // Attractions: leitura pública, escrita restrita a GUIDE
                         .requestMatchers(HttpMethod.GET, "/api/v1/attractions/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/attractions/**").hasRole("GUIDE")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/attractions/**").hasRole("GUIDE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/attractions/**").hasRole("GUIDE")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/attractions/**").hasAnyRole("GUIDE", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/attractions/**").hasAnyRole("GUIDE", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/attractions/**").hasAnyRole("GUIDE", "ADMIN")
 
                         // Reservations: confirm/complete é do GUIDE, o resto é do TOURIST
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/reservations/*/confirm").hasRole("GUIDE")

@@ -4,7 +4,9 @@ import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 
-public class AttractionRequestDTO {
+public class AttractionRequestDTO implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @NotNull(message = "O título é obrigatório")
     @Size(max = 150, message = "O título não pode ter mais de 150 caracteres")

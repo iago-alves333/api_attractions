@@ -11,4 +11,4 @@ public record ReviewResponseDTO(
         Integer rating,
         String comment,
         LocalDateTime createdAt
-) {}
+) implements java.io.Serializable {}

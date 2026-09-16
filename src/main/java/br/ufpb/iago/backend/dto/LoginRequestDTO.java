@@ -3,7 +3,9 @@ package br.ufpb.iago.backend.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-public class LoginRequestDTO {
+public class LoginRequestDTO implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @NotBlank(message = "O email é obrigatório")
     @Email(message = "Formato de email inválido")

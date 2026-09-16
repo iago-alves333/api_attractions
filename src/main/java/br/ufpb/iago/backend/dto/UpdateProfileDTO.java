@@ -3,7 +3,9 @@ package br.ufpb.iago.backend.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
-public class UpdateProfileDTO {
+public class UpdateProfileDTO implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Size(min = 2, max = 100, message = "O nome deve ter entre 2 e 100 caracteres")
     private String name;

@@ -10,7 +10,9 @@ import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
-    public class ReviewRequestDTO {
+    public class ReviewRequestDTO implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
         @NotNull(message = "O ID da atração é obrigatório")
         private UUID attractionId;

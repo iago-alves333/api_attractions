@@ -10,4 +10,4 @@ public record LoginResponseDTO(
         UUID userId,
         String name,
         Role role
-) {}
+) implements java.io.Serializable {}
