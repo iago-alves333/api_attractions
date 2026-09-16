@@ -92,6 +92,12 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
 
+        <!-- Redis Cache -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- Adicione o módulo correspondente ao seu banco (exemplo para PostgreSQL) -->
         <dependency>
             <groupId>org.flywaydb</groupId>

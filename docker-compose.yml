@@ -38,6 +38,14 @@ services:
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     depends_on:
       - db
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: titureco_redis
+    ports:
+      - "6379:6379"
     restart: unless-stopped
 
 volumes:
