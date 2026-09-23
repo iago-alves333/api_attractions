@@ -2,6 +2,7 @@ package br.ufpb.iago.backend.controller;
 
 import br.ufpb.iago.backend.dto.AttractionRequestDTO;
 import br.ufpb.iago.backend.dto.AttractionResponseDTO;
+import br.ufpb.iago.backend.dto.PageDTO;
 import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.model.User;
 import br.ufpb.iago.backend.security.CustomUserDetails;
@@ -87,10 +88,10 @@ class AttractionControllerTest {
     @DisplayName("Find All deve retornar pagina de atrações")
     void testFindAll() {
         Pageable pageable = Pageable.unpaged();
-        Page<AttractionResponseDTO> page = new PageImpl<>(List.of(responseDTO));
+        PageDTO<AttractionResponseDTO> page = new PageDTO<>(new PageImpl<>(List.of(responseDTO)));
         when(attractionService.findAll(pageable)).thenReturn(page);
 
-        ResponseEntity<Page<AttractionResponseDTO>> response = attractionController.findAll(pageable);
+        ResponseEntity<PageDTO<AttractionResponseDTO>> response = attractionController.findAll(pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -110,10 +111,10 @@ class AttractionControllerTest {
     @DisplayName("Get Nearby deve retornar lista")
     void testGetNearby() {
         Pageable pageable = Pageable.unpaged();
-        Page<AttractionResponseDTO> page = new PageImpl<>(List.of(responseDTO));
+        PageDTO<AttractionResponseDTO> page = new PageDTO<>(new PageImpl<>(List.of(responseDTO)));
         when(attractionService.getNearbyAttractions(10.0, 10.0, 50.0, pageable)).thenReturn(page);
 
-        ResponseEntity<Page<AttractionResponseDTO>> response = attractionController.getNearby(10.0, 10.0, 50.0, pageable);
+        ResponseEntity<PageDTO<AttractionResponseDTO>> response = attractionController.getNearby(10.0, 10.0, 50.0, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -122,10 +123,10 @@ class AttractionControllerTest {
     @DisplayName("Search deve retornar lista")
     void testSearch() {
         Pageable pageable = Pageable.unpaged();
-        Page<AttractionResponseDTO> page = new PageImpl<>(List.of(responseDTO));
+        PageDTO<AttractionResponseDTO> page = new PageDTO<>(new PageImpl<>(List.of(responseDTO)));
         when(attractionService.searchAttractions("kw", 10.0, 10.0, 50.0, pageable)).thenReturn(page);
 
-        ResponseEntity<Page<AttractionResponseDTO>> response = attractionController.search("kw", 10.0, 10.0, 50.0, pageable);
+        ResponseEntity<PageDTO<AttractionResponseDTO>> response = attractionController.search("kw", 10.0, 10.0, 50.0, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }

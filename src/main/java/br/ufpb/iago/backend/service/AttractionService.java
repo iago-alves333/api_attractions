@@ -2,6 +2,7 @@ package br.ufpb.iago.backend.service;
 
 import br.ufpb.iago.backend.dto.AttractionRequestDTO;
 import br.ufpb.iago.backend.dto.AttractionResponseDTO;
+import br.ufpb.iago.backend.dto.PageDTO;
 import br.ufpb.iago.backend.exception.AttractionNotFoundException;
 import br.ufpb.iago.backend.exception.GuideNotFoundException;
 import br.ufpb.iago.backend.model.Attraction;
@@ -12,6 +13,8 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +42,7 @@ public class AttractionService {
 
     // ─── CREATE ───────────────────────────────────────────────────────────────
 
+    @CacheEvict(value = "attractions", allEntries = true)
     @Transactional
     public AttractionResponseDTO create(AttractionRequestDTO dto, UUID guideId) {
         User guide = userRepository.findById(guideId)
@@ -52,13 +56,14 @@ public class AttractionService {
     }
 
     // ─── READ ─────────────────────────────────────────────────────────────────
-
+    @Cacheable(value = "attractions", key = "'page_' + #pageable.pageNumber + '_size_' + #pageable.pageSize")
     @Transactional(readOnly = true)
-    public Page<AttractionResponseDTO> findAll(Pageable pageable) {
-        return attractionRepository.findAll(pageable)
-                .map(this::convertToDTO);
+    public PageDTO<AttractionResponseDTO> findAll(Pageable pageable) {
+        return new PageDTO<>(attractionRepository.findAll(pageable)
+                .map(this::convertToDTO));
     }
 
+    @Cacheable(value = "attractions", key = "#id")
     @Transactional(readOnly = true)
     public AttractionResponseDTO findById(UUID id) {
         Attraction attraction = attractionRepository.findById(id)
@@ -67,7 +72,7 @@ public class AttractionService {
     }
 
     // ─── UPDATE ───────────────────────────────────────────────────────────────
-
+    @CacheEvict(value = "attractions", allEntries = true)
     @Transactional
     public AttractionResponseDTO update(UUID id, AttractionRequestDTO dto, UUID guideId) {
         Attraction attraction = attractionRepository.findById(id)
@@ -83,6 +88,7 @@ public class AttractionService {
 
     // ─── DELETE ───────────────────────────────────────────────────────────────
 
+    @CacheEvict(value = "attractions", allEntries = true)
     @Transactional
     public void delete(UUID id, UUID guideId) {
         Attraction attraction = attractionRepository.findById(id)
@@ -96,19 +102,19 @@ public class AttractionService {
     }
 
     // ─── SEARCH ───────────────────────────────────────────────────────────────
-    public Page<AttractionResponseDTO> searchByTitle(String title, Pageable pageable) {
-        return attractionRepository.findByTitleContainingIgnoreCase(title, pageable)
-                .map(this::convertToDTO);
+    public PageDTO<AttractionResponseDTO> searchByTitle(String title, Pageable pageable) {
+        return new PageDTO<>(attractionRepository.findByTitleContainingIgnoreCase(title, pageable)
+                .map(this::convertToDTO));
     }
-    public Page<AttractionResponseDTO> getNearbyAttractions(double lat,double lon, double radiusKm, Pageable pageable){
+    public PageDTO<AttractionResponseDTO> getNearbyAttractions(double lat,double lon, double radiusKm, Pageable pageable){
         double radiusInMeters = (radiusKm > 0 ? radiusKm : 50.0) * 1000;
         Page<Attraction> attractions = attractionRepository.findNearby(lat, lon, radiusInMeters, pageable);
-        return attractions.map(this::convertToDTO);
+        return new PageDTO<>(attractions.map(this::convertToDTO));
     }
-    public Page<AttractionResponseDTO> searchAttractions(String keyword, double lat, double lon, double radiusKm, Pageable pageable) {
+    public PageDTO<AttractionResponseDTO> searchAttractions(String keyword, double lat, double lon, double radiusKm, Pageable pageable) {
         double radiusInMeters = (radiusKm > 0 ? radiusKm : 50.0) * 1000;
         Page<Attraction> attractions = attractionRepository.searchByKeywordAndLocation(keyword, lat, lon, radiusInMeters, pageable);
-        return attractions.map(this::convertToDTO);
+        return new PageDTO<>(attractions.map(this::convertToDTO));
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────

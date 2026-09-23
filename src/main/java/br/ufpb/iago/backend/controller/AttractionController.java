@@ -2,6 +2,7 @@ package br.ufpb.iago.backend.controller;
 
 import br.ufpb.iago.backend.dto.AttractionRequestDTO;
 import br.ufpb.iago.backend.dto.AttractionResponseDTO;
+import br.ufpb.iago.backend.dto.PageDTO;
 import br.ufpb.iago.backend.security.CustomUserDetails;
 import br.ufpb.iago.backend.service.AttractionService;
 import jakarta.validation.Valid;
@@ -59,7 +60,7 @@ public class AttractionController {
     // ─── ENDPOINTS DE BUSCA E LISTAGEM (PÚBLICOS) ─────────────────────────────
 
     @GetMapping
-    public ResponseEntity<Page<AttractionResponseDTO>> findAll(
+    public ResponseEntity<PageDTO<AttractionResponseDTO>> findAll(
             @PageableDefault(size = 10, sort = "title") Pageable pageable) {
         return ResponseEntity.ok(attractionService.findAll(pageable));
     }
@@ -74,7 +75,7 @@ public class AttractionController {
      * Busca atrações baseadas em um raio de distância usando PostGIS.
      */
     @GetMapping("/nearby")
-    public ResponseEntity<Page<AttractionResponseDTO>> getNearby(
+    public ResponseEntity<PageDTO<AttractionResponseDTO>> getNearby(
             @RequestParam double lat,
             @RequestParam double lon,
             @RequestParam(defaultValue = "10.0") double radiusKm,
@@ -88,7 +89,7 @@ public class AttractionController {
      * Busca por título/descrição, opcionalmente filtrada por raio de distância.
      */
     @GetMapping("/search")
-    public ResponseEntity<Page<AttractionResponseDTO>> search(
+    public ResponseEntity<PageDTO<AttractionResponseDTO>> search(
             @RequestParam String keyword,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lon,

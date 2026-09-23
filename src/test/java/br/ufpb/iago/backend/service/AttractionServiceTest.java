@@ -2,6 +2,7 @@ package br.ufpb.iago.backend.service;
 
 import br.ufpb.iago.backend.dto.AttractionRequestDTO;
 import br.ufpb.iago.backend.dto.AttractionResponseDTO;
+import br.ufpb.iago.backend.dto.PageDTO;
 import br.ufpb.iago.backend.exception.AttractionNotFoundException;
 import br.ufpb.iago.backend.exception.GuideNotFoundException;
 import br.ufpb.iago.backend.model.Attraction;
@@ -142,7 +143,7 @@ class AttractionServiceTest {
 
             when(attractionRepository.findAll(pageable)).thenReturn(page);
 
-            Page<AttractionResponseDTO> result = attractionService.findAll(pageable);
+            PageDTO<AttractionResponseDTO> result = attractionService.findAll(pageable);
 
             assertEquals(1, result.getTotalElements());
             assertEquals(attraction.getId(), result.getContent().get(0).id());
@@ -251,7 +252,7 @@ class AttractionServiceTest {
             Page<Attraction> page = new PageImpl<>(List.of(attraction));
             when(attractionRepository.findByTitleContainingIgnoreCase(eq("Praia"), any(Pageable.class))).thenReturn(page);
 
-            Page<AttractionResponseDTO> result = attractionService.searchByTitle("Praia", Pageable.unpaged());
+            PageDTO<AttractionResponseDTO> result = attractionService.searchByTitle("Praia", Pageable.unpaged());
 
             assertEquals(1, result.getTotalElements());
             assertEquals("Praia", result.getContent().get(0).title());
@@ -264,7 +265,7 @@ class AttractionServiceTest {
             Page<Attraction> page = new PageImpl<>(List.of(attraction));
             when(attractionRepository.findNearby(eq(-7.1), eq(-34.8), eq(defaultRadiusMeters), any(Pageable.class))).thenReturn(page);
 
-            Page<AttractionResponseDTO> result = attractionService.getNearbyAttractions(-7.1, -34.8, 0, Pageable.unpaged());
+            PageDTO<AttractionResponseDTO> result = attractionService.getNearbyAttractions(-7.1, -34.8, 0, Pageable.unpaged());
 
             assertEquals(1, result.getTotalElements());
             verify(attractionRepository).findNearby(eq(-7.1), eq(-34.8), eq(defaultRadiusMeters), any(Pageable.class));
@@ -278,7 +279,7 @@ class AttractionServiceTest {
             Page<Attraction> page = new PageImpl<>(List.of(attraction));
             when(attractionRepository.findNearby(eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class))).thenReturn(page);
 
-            Page<AttractionResponseDTO> result = attractionService.getNearbyAttractions(-7.1, -34.8, radiusKm, Pageable.unpaged());
+            PageDTO<AttractionResponseDTO> result = attractionService.getNearbyAttractions(-7.1, -34.8, radiusKm, Pageable.unpaged());
 
             assertEquals(1, result.getTotalElements());
             verify(attractionRepository).findNearby(eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class));
@@ -291,7 +292,7 @@ class AttractionServiceTest {
             Page<Attraction> page = new PageImpl<>(List.of(attraction));
             when(attractionRepository.searchByKeywordAndLocation(eq("Praia"), eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class))).thenReturn(page);
 
-            Page<AttractionResponseDTO> result = attractionService.searchAttractions("Praia", -7.1, -34.8, 20.0, Pageable.unpaged());
+            PageDTO<AttractionResponseDTO> result = attractionService.searchAttractions("Praia", -7.1, -34.8, 20.0, Pageable.unpaged());
 
             assertEquals(1, result.getTotalElements());
             verify(attractionRepository).searchByKeywordAndLocation(eq("Praia"), eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class));
