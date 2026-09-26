@@ -106,6 +106,20 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!-- Bucket4j Core -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
+        </dependency>
+
+        <!-- Bucket4j Redis (Lettuce) -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-redis</artifactId>
+            <version>8.10.1</version>
+        </dependency>
+
         <!-- Adicione o módulo correspondente ao seu banco (exemplo para PostgreSQL) -->
         <dependency>
             <groupId>org.flywaydb</groupId>
