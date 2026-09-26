@@ -18,6 +18,7 @@ import br.ufpb.iago.backend.repository.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
 import java.util.UUID;
@@ -50,6 +51,7 @@ public class ReviewService {
     // ─── CREATE ───────────────────────────────────────────────────────────────
 
     @Transactional
+    @CacheEvict(value = "attractions", allEntries = true)
     public ReviewResponseDTO create(ReviewRequestDTO dto, UUID touristId) {
         User tourist = userRepository.findById(touristId)
                 .orElseThrow(UserNotFoundException::new);
@@ -105,6 +107,7 @@ public class ReviewService {
     // ─── UPDATE ───────────────────────────────────────────────────────────────
 
     @Transactional
+    @CacheEvict(value = "attractions", allEntries = true)
     public ReviewResponseDTO update(UUID id, ReviewRequestDTO dto, UUID touristId) {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(ReviewNotFoundException::new);
@@ -127,6 +130,7 @@ public class ReviewService {
     // ─── DELETE ───────────────────────────────────────────────────────────────
 
     @Transactional
+    @CacheEvict(value = "attractions", allEntries = true)
     public void delete(UUID id, UUID touristId) {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(ReviewNotFoundException::new);

@@ -114,6 +114,7 @@
     </dependencies>
 
     <build>
+        <directory>target-maven</directory>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

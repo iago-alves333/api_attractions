@@ -1,4 +1,5 @@
 target/
+target-maven
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -39,4 +40,4 @@ build/
 .DS_Store
 
 ### Environment variables ###
-.env
+.envtarget-maven/

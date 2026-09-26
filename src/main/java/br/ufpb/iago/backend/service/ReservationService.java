@@ -22,6 +22,7 @@ import br.ufpb.iago.backend.repository.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -52,6 +53,7 @@ public class ReservationService {
     // ─── CREATE ───────────────────────────────────────────────────────────────
 
     @Transactional
+    @CacheEvict(value = "attractions", allEntries = true)
     public ReservationResponseDTO create(ReservationRequestDTO dto, UUID touristId) {
         User tourist = userRepository.findById(touristId)
                 .orElseThrow(UserNotFoundException::new);
@@ -112,6 +114,7 @@ public class ReservationService {
     // ─── CANCEL ───────────────────────────────────────────────────────────────
 
     @Transactional
+    @CacheEvict(value = "attractions", allEntries = true)
     public ReservationResponseDTO cancel(UUID id, UUID touristId) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(ReservationNotFoundException::new);
