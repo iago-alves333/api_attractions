@@ -1,5 +1,6 @@
 package br.ufpb.iago.backend.service;
 
+import br.ufpb.iago.backend.mapper.AttractionMapper;
 import br.ufpb.iago.backend.dto.AttractionRequestDTO;
 import br.ufpb.iago.backend.dto.AttractionResponseDTO;
 import br.ufpb.iago.backend.dto.PageDTO;
@@ -45,6 +46,9 @@ class AttractionServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @org.mockito.Spy
+    private AttractionMapper attractionMapper = org.mapstruct.factory.Mappers.getMapper(AttractionMapper.class);
 
     @InjectMocks
     private AttractionService attractionService;
@@ -299,44 +303,4 @@ class AttractionServiceTest {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // CONVERT TO DTO
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    @Nested
-    @DisplayName("convertToDTO()")
-    class ConvertToDTOTests {
-
-        @Test
-        @DisplayName("Deve converter atração com location e ratings corretamente")
-        void convertToDTO_sucesso() {
-            AttractionResponseDTO dto = attractionService.convertToDTO(attraction);
-
-            assertEquals(attraction.getId(), dto.id());
-            assertEquals(guide.getId(), dto.guideId());
-            assertEquals(-34.8, dto.longitude());
-            assertEquals(-7.1, dto.latitude());
-            assertEquals(4.5, dto.ratingAverage());
-            assertEquals(2, dto.reviewCount());
-        }
-
-        @Test
-        @DisplayName("Deve lidar com valores nulos suavemente")
-        void convertToDTO_comValoresNulos_lidarBem() {
-            Attraction attNull = new Attraction();
-            attNull.setId(UUID.randomUUID());
-            attNull.setTitle("Sem Local");
-            attNull.setPrice(BigDecimal.TEN);
-            attNull.setAvailableSpots(5);
-            attNull.setGuide(guide);
-            // location = null, ratingAverage = null, reviewCount = null
-
-            AttractionResponseDTO dto = attractionService.convertToDTO(attNull);
-
-            assertEquals(0.0, dto.longitude());
-            assertEquals(0.0, dto.latitude());
-            assertEquals(0.0, dto.ratingAverage());
-            assertEquals(0, dto.reviewCount());
-        }
-    }
 }

@@ -6,6 +6,7 @@ import br.ufpb.iago.backend.exception.AttractionNotFoundException;
 import br.ufpb.iago.backend.exception.DuplicateReviewException;
 import br.ufpb.iago.backend.exception.ReviewNotFoundException;
 import br.ufpb.iago.backend.exception.UserNotFoundException;
+import br.ufpb.iago.backend.mapper.ReviewMapper;
 import br.ufpb.iago.backend.model.Attraction;
 import br.ufpb.iago.backend.model.Review;
 import br.ufpb.iago.backend.model.Role;
@@ -51,6 +52,9 @@ class ReviewServiceTest {
 
     @Mock
     private ReservationRepository reservationRepository;
+
+    @org.mockito.Spy
+    private ReviewMapper reviewMapper = org.mapstruct.factory.Mappers.getMapper(ReviewMapper.class);
 
     @InjectMocks
     private ReviewService reviewService;

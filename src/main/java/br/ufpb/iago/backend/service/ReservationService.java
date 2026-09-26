@@ -1,5 +1,7 @@
 package br.ufpb.iago.backend.service;
 
+import br.ufpb.iago.backend.mapper.ReservationMapper;
+
 import br.ufpb.iago.backend.dto.ReservationRequestDTO;
 import br.ufpb.iago.backend.dto.ReservationResponseDTO;
 import br.ufpb.iago.backend.exception.AttractionNotFoundException;
@@ -35,13 +37,16 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final AttractionRepository attractionRepository;
     private final UserRepository userRepository;
+    private final ReservationMapper reservationMapper;
 
     public ReservationService(ReservationRepository reservationRepository,
                               AttractionRepository attractionRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              ReservationMapper reservationMapper) {
         this.reservationRepository = reservationRepository;
         this.attractionRepository = attractionRepository;
         this.userRepository = userRepository;
+        this.reservationMapper = reservationMapper;
     }
 
     // ─── CREATE ───────────────────────────────────────────────────────────────
@@ -80,7 +85,7 @@ public class ReservationService {
         attraction.setAvailableSpots(attraction.getAvailableSpots() - 1);
         attractionRepository.save(attraction);
 
-        return convertToDTO(reservationRepository.save(reservation));
+        return reservationMapper.toResponseDTO(reservationRepository.save(reservation));
     }
 
     // ─── READ ─────────────────────────────────────────────────────────────────
@@ -89,7 +94,7 @@ public class ReservationService {
     public Page<ReservationResponseDTO> findAllByTourist(UUID touristId, Pageable pageable) {
         // Delega a filtragem diretamente para o banco de dados
         return reservationRepository.findAllByTouristId(touristId, pageable)
-                .map(this::convertToDTO);
+                .map(reservationMapper::toResponseDTO);
     }
 
     @Transactional(readOnly = true)
@@ -101,7 +106,7 @@ public class ReservationService {
             throw new AccessDeniedException("Acesso negado a esta reserva");
         }
 
-        return convertToDTO(reservation);
+        return reservationMapper.toResponseDTO(reservation);
     }
 
     // ─── CANCEL ───────────────────────────────────────────────────────────────
@@ -127,7 +132,7 @@ public class ReservationService {
         attraction.setAvailableSpots(attraction.getAvailableSpots() + 1);
         attractionRepository.save(attraction);
 
-        return convertToDTO(reservationRepository.save(reservation));
+        return reservationMapper.toResponseDTO(reservationRepository.save(reservation));
     }
 
     // ─── CONFIRM ──────────────────────────────────────────────────────────────
@@ -147,7 +152,7 @@ public class ReservationService {
         }
 
         reservation.setStatus(Status.CONFIRMED);
-        return convertToDTO(reservationRepository.save(reservation));
+        return reservationMapper.toResponseDTO(reservationRepository.save(reservation));
     }
 
     // ─── COMPLETE ─────────────────────────────────────────────────────────────
@@ -167,7 +172,7 @@ public class ReservationService {
         }
 
         reservation.setStatus(Status.COMPLETED);
-        return convertToDTO(reservationRepository.save(reservation));
+        return reservationMapper.toResponseDTO(reservationRepository.save(reservation));
     }
 
     // ─── GUIDE READ ──────────────────────────────────────────────────────────
@@ -175,7 +180,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public Page<ReservationResponseDTO> findAllByGuide(UUID guideId, Pageable pageable) {
         return reservationRepository.findAllByAttractionGuideId(guideId, pageable)
-                .map(this::convertToDTO);
+                .map(reservationMapper::toResponseDTO);
     }
     public Page<ReservationResponseDTO> findAllByAttraction(UUID attractionId, UUID guideId, Pageable pageable) {
         Attraction attraction = attractionRepository.findById(attractionId)
@@ -186,21 +191,7 @@ public class ReservationService {
         }
 
         return reservationRepository.findAllByAttractionId(attractionId, pageable)
-                .map(this::convertToDTO);
+                .map(reservationMapper::toResponseDTO);
     }
 
-    // ─── HELPER ───────────────────────────────────────────────────────────────
-
-    public ReservationResponseDTO convertToDTO(Reservation reservation) {
-        return new ReservationResponseDTO(
-                reservation.getId(),
-                reservation.getTourist().getId(),
-                reservation.getTourist().getName(),
-                reservation.getAttraction().getId(),
-                reservation.getAttraction().getTitle(),
-                reservation.getStatus(),
-                reservation.getReservedFor(),
-                reservation.getCreatedAt()
-        );
-    }
 }

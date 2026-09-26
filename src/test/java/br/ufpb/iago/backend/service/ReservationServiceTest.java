@@ -3,6 +3,7 @@ package br.ufpb.iago.backend.service;
 import br.ufpb.iago.backend.dto.ReservationRequestDTO;
 import br.ufpb.iago.backend.dto.ReservationResponseDTO;
 import br.ufpb.iago.backend.exception.*;
+import br.ufpb.iago.backend.mapper.ReservationMapper;
 import br.ufpb.iago.backend.model.*;
 import br.ufpb.iago.backend.repository.AttractionRepository;
 import br.ufpb.iago.backend.repository.ReservationRepository;
@@ -42,6 +43,9 @@ class ReservationServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @org.mockito.Spy
+    private ReservationMapper reservationMapper = org.mapstruct.factory.Mappers.getMapper(ReservationMapper.class);
 
     @InjectMocks
     private ReservationService reservationService;

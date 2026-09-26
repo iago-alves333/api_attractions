@@ -1,5 +1,7 @@
 package br.ufpb.iago.backend.service;
 
+import br.ufpb.iago.backend.mapper.AttractionMapper;
+
 import br.ufpb.iago.backend.dto.AttractionRequestDTO;
 import br.ufpb.iago.backend.dto.AttractionResponseDTO;
 import br.ufpb.iago.backend.dto.PageDTO;
@@ -34,10 +36,12 @@ public class AttractionService {
 
     private final AttractionRepository attractionRepository;
     private final UserRepository userRepository;
+    private final AttractionMapper attractionMapper;
 
-    public AttractionService(AttractionRepository attractionRepository, UserRepository userRepository) {
+    public AttractionService(AttractionRepository attractionRepository, UserRepository userRepository, AttractionMapper attractionMapper) {
         this.attractionRepository = attractionRepository;
         this.userRepository = userRepository;
+        this.attractionMapper = attractionMapper;
     }
 
     // ─── CREATE ───────────────────────────────────────────────────────────────
@@ -52,7 +56,7 @@ public class AttractionService {
         attraction.setGuide(guide);
         applyDto(attraction, dto);
 
-        return convertToDTO(attractionRepository.save(attraction));
+        return attractionMapper.toResponseDTO(attractionRepository.save(attraction));
     }
 
     // ─── READ ─────────────────────────────────────────────────────────────────
@@ -60,7 +64,7 @@ public class AttractionService {
     @Transactional(readOnly = true)
     public PageDTO<AttractionResponseDTO> findAll(Pageable pageable) {
         return new PageDTO<>(attractionRepository.findAll(pageable)
-                .map(this::convertToDTO));
+                .map(attractionMapper::toResponseDTO));
     }
 
     @Cacheable(value = "attractions", key = "#id")
@@ -68,7 +72,7 @@ public class AttractionService {
     public AttractionResponseDTO findById(UUID id) {
         Attraction attraction = attractionRepository.findById(id)
                 .orElseThrow(AttractionNotFoundException::new);
-        return convertToDTO(attraction);
+        return attractionMapper.toResponseDTO(attraction);
     }
 
     // ─── UPDATE ───────────────────────────────────────────────────────────────
@@ -83,7 +87,7 @@ public class AttractionService {
         }
 
         applyDto(attraction, dto);
-        return convertToDTO(attractionRepository.save(attraction));
+        return attractionMapper.toResponseDTO(attractionRepository.save(attraction));
     }
 
     // ─── DELETE ───────────────────────────────────────────────────────────────
@@ -104,26 +108,23 @@ public class AttractionService {
     // ─── SEARCH ───────────────────────────────────────────────────────────────
     public PageDTO<AttractionResponseDTO> searchByTitle(String title, Pageable pageable) {
         return new PageDTO<>(attractionRepository.findByTitleContainingIgnoreCase(title, pageable)
-                .map(this::convertToDTO));
+                .map(attractionMapper::toResponseDTO));
     }
     public PageDTO<AttractionResponseDTO> getNearbyAttractions(double lat,double lon, double radiusKm, Pageable pageable){
         double radiusInMeters = (radiusKm > 0 ? radiusKm : 50.0) * 1000;
         Page<Attraction> attractions = attractionRepository.findNearby(lat, lon, radiusInMeters, pageable);
-        return new PageDTO<>(attractions.map(this::convertToDTO));
+        return new PageDTO<>(attractions.map(attractionMapper::toResponseDTO));
     }
     public PageDTO<AttractionResponseDTO> searchAttractions(String keyword, double lat, double lon, double radiusKm, Pageable pageable) {
         double radiusInMeters = (radiusKm > 0 ? radiusKm : 50.0) * 1000;
         Page<Attraction> attractions = attractionRepository.searchByKeywordAndLocation(keyword, lat, lon, radiusInMeters, pageable);
-        return new PageDTO<>(attractions.map(this::convertToDTO));
+        return new PageDTO<>(attractions.map(attractionMapper::toResponseDTO));
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────
 
     private void applyDto(Attraction attraction, AttractionRequestDTO dto) {
-        attraction.setTitle(dto.getTitle());
-        attraction.setDescription(dto.getDescription());
-        attraction.setPrice(dto.getPrice());
-        attraction.setAvailableSpots(dto.getAvailableSpots());
+        attractionMapper.updateEntityFromDTO(dto, attraction);
 
         Point point = geometryFactory.createPoint(
                 new Coordinate(dto.getLongitude(), dto.getLatitude())
@@ -131,22 +132,4 @@ public class AttractionService {
         attraction.setLocation(point);
     }
 
-    public AttractionResponseDTO convertToDTO(Attraction attraction) {
-        double lat = attraction.getLocation() != null ? attraction.getLocation().getY() : 0.0;
-        double lon = attraction.getLocation() != null ? attraction.getLocation().getX() : 0.0;
-
-        return new AttractionResponseDTO(
-                attraction.getId(),
-                attraction.getGuide().getId(),
-                attraction.getGuide().getName(),
-                attraction.getTitle(),
-                attraction.getDescription(),
-                attraction.getPrice(),
-                attraction.getAvailableSpots(),
-                lat,
-                lon,
-                attraction.getRatingAverage() != null ? attraction.getRatingAverage() : 0.0,
-                attraction.getReviewCount() != null ? attraction.getReviewCount() : 0
-        );
-    }
 }

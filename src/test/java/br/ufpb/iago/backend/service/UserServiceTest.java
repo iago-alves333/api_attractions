@@ -1,5 +1,6 @@
 package br.ufpb.iago.backend.service;
 
+import br.ufpb.iago.backend.mapper.UserMapper;
 import br.ufpb.iago.backend.dto.LoginRequestDTO;
 import br.ufpb.iago.backend.dto.UpdateProfileDTO;
 import br.ufpb.iago.backend.dto.UserRequestDTO;
@@ -44,6 +45,9 @@ class UserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @org.mockito.Spy
+    private UserMapper userMapper = org.mapstruct.factory.Mappers.getMapper(UserMapper.class);
 
     @InjectMocks
     private UserService userService;
@@ -441,22 +445,4 @@ class UserServiceTest {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // CONVERT TO DTO
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    @Nested
-    @DisplayName("convertToDTO()")
-    class ConvertToDTOTests {
-
-        @Test
-        @DisplayName("Deve converter User para UserResponseDTO corretamente")
-        void convertToDTO_converteCorretamente() {
-            UserResponseDTO dto = userService.convertToDTO(tourist);
-
-            assertEquals(tourist.getId(), dto.id());
-            assertEquals("Turista", dto.name());
-            assertEquals(Role.TOURIST, dto.role());
-        }
-    }
 }

@@ -1,5 +1,7 @@
 package br.ufpb.iago.backend.service;
 
+import br.ufpb.iago.backend.mapper.ReviewMapper;
+
 import br.ufpb.iago.backend.dto.ReviewRequestDTO;
 import br.ufpb.iago.backend.dto.ReviewResponseDTO;
 import br.ufpb.iago.backend.exception.AttractionNotFoundException;
@@ -31,15 +33,18 @@ public class ReviewService {
     private final AttractionRepository attractionRepository;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
+    private final ReviewMapper reviewMapper;
 
     public ReviewService(ReviewRepository reviewRepository,
                          AttractionRepository attractionRepository,
                          UserRepository userRepository,
-                         ReservationRepository reservationRepository) {
+                         ReservationRepository reservationRepository,
+                         ReviewMapper reviewMapper) {
         this.reviewRepository = reviewRepository;
         this.attractionRepository = attractionRepository;
         this.userRepository = userRepository;
         this.reservationRepository = reservationRepository;
+        this.reviewMapper = reviewMapper;
     }
 
     // ─── CREATE ───────────────────────────────────────────────────────────────
@@ -73,7 +78,7 @@ public class ReviewService {
         // Atualiza a média e a contagem na atração
         updateAttractionRating(attraction);
 
-        return convertToDTO(review);
+        return reviewMapper.toResponseDTO(review);
     }
 
     // ─── READ ─────────────────────────────────────────────────────────────────
@@ -81,20 +86,20 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public Page<ReviewResponseDTO> findAll(Pageable pageable) {
         return reviewRepository.findAll(pageable)
-                .map(this::convertToDTO);
+                .map(reviewMapper::toResponseDTO);
     }
 
     @Transactional(readOnly = true)
     public Page<ReviewResponseDTO> findByAttraction(UUID attractionId, Pageable pageable) {
         return reviewRepository.findAllByAttractionId(attractionId, pageable)
-                .map(this::convertToDTO);
+                .map(reviewMapper::toResponseDTO);
     }
 
     @Transactional(readOnly = true)
     public ReviewResponseDTO findById(UUID id) {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(ReviewNotFoundException::new);
-        return convertToDTO(review);
+        return reviewMapper.toResponseDTO(review);
     }
 
     // ─── UPDATE ───────────────────────────────────────────────────────────────
@@ -116,7 +121,7 @@ public class ReviewService {
         // Atualiza a média na atração após a edição
         updateAttractionRating(review.getAttraction());
 
-        return convertToDTO(review);
+        return reviewMapper.toResponseDTO(review);
     }
 
     // ─── DELETE ───────────────────────────────────────────────────────────────
@@ -161,15 +166,4 @@ public class ReviewService {
         attractionRepository.save(attraction);
     }
 
-    public ReviewResponseDTO convertToDTO(Review review) {
-        return new ReviewResponseDTO(
-                review.getId(),
-                review.getAttraction().getId(),
-                review.getTourist().getId(),
-                review.getTourist().getName(),
-                review.getRating(),
-                review.getComment(),
-                review.getCreatedAt()
-        );
-    }
 }

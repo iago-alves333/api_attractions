@@ -1,5 +1,7 @@
 package br.ufpb.iago.backend.service;
 
+import br.ufpb.iago.backend.mapper.UserMapper;
+
 import br.ufpb.iago.backend.dto.LoginRequestDTO;
 import br.ufpb.iago.backend.dto.UpdateProfileDTO;
 import br.ufpb.iago.backend.dto.UserRequestDTO;
@@ -28,10 +30,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userMapper = userMapper;
     }
 
     // ─── AUTH ─────────────────────────────────────────────────────────────────
@@ -68,7 +72,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setRole(Role.TOURIST);
 
-        return convertToDTO(userRepository.save(user));
+        return userMapper.toResponseDTO(userRepository.save(user));
     }
 
     // ─── READ ─────────────────────────────────────────────────────────────────
@@ -76,14 +80,14 @@ public class UserService {
     @Transactional(readOnly = true)
     public Page<UserResponseDTO> findAll(Pageable pageable) {
         return userRepository.findAll(pageable)
-                .map(this::convertToDTO);
+                .map(userMapper::toResponseDTO);
     }
 
     @Transactional(readOnly = true)
     public UserResponseDTO findById(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(UserNotFoundException::new);
-        return convertToDTO(user);
+        return userMapper.toResponseDTO(user);
     }
 
     // ─── UPDATE PROFILE ───────────────────────────────────────────────────────
@@ -113,7 +117,7 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
-        return convertToDTO(userRepository.save(user));
+        return userMapper.toResponseDTO(userRepository.save(user));
     }
 
     // ─── PROMOTE ──────────────────────────────────────────────────────────────
@@ -136,7 +140,7 @@ public class UserService {
         }
 
         user.setRole(Role.GUIDE);
-        return convertToDTO(userRepository.save(user));
+        return userMapper.toResponseDTO(userRepository.save(user));
     }
 
     // ─── DELETE ───────────────────────────────────────────────────────────────
@@ -149,14 +153,4 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    // ─── HELPER ───────────────────────────────────────────────────────────────
-
-    public UserResponseDTO convertToDTO(User user) {
-        return new UserResponseDTO(
-                user.getId(),
-                user.getName(),
-                user.getRole(),
-                user.getCreatedAt()
-        );
-    }
 }
