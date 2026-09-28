@@ -1,0 +1,8 @@
+workspace:
+  id: 733b9f3e-1d9b-4367-8719-b4c120551d50
+localResources:
+  specs:
+    - ../postman/specs/Titureco API/index.json
+resourceNameMappings:
+  specs:
+    - ../postman/specs/Titureco API/index.json: Titureco API

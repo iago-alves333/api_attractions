@@ -1,0 +1,30 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/reservations/:id/confirm"
+method: PATCH
+headers:
+  Accept: "*/*"
+pathVariables:
+  - key: id
+    value: 852f04d3-ac53-b77c-4592-339efc3a1f48
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+body:
+  type: text
+  content: ""
+settings: {}
+examples: ./.resources/confirm.resources/examples
+order: 1000

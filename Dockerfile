@@ -15,7 +15,7 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # Copia o .jar gerado do estágio anterior
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target-maven/*.jar app.jar
 
 # Expõe a porta padrão do Spring Boot
 EXPOSE 8080

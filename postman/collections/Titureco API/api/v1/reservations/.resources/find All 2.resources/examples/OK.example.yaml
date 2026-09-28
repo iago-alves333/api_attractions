@@ -1,0 +1,244 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/reservations?page=4831&size=327&sort=string,string"
+  method: GET
+  headers:
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  queryParams:
+    page: "4831"
+    size: "327"
+    sort: string,string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      {
+        "totalPages": 6612,
+        "totalElements": 6362,
+        "pageable": {
+          "paged": true,
+          "pageNumber": 4904,
+          "pageSize": 1187,
+          "offset": 9883,
+          "sort": [
+            {
+              "direction": "string",
+              "nullHandling": "string",
+              "ascending": false,
+              "property": "string",
+              "ignoreCase": false
+            },
+            {
+              "direction": "string",
+              "nullHandling": "string",
+              "ascending": false,
+              "property": "string",
+              "ignoreCase": false
+            }
+          ],
+          "unpaged": true
+        },
+        "first": true,
+        "size": 6205,
+        "content": [
+          {
+            "id": "87fb0a8c-a3d7-3f53-b8e4-570a9f90e6bd",
+            "touristId": "cbdd7a3f-7517-354d-ffb5-6658e6908845",
+            "touristName": "string",
+            "attractionID": "cd24537a-cc60-ed1d-6608-94b1ef572b14",
+            "attractionTitle": "string",
+            "status": "CANCELLED",
+            "reservedFor": "1992-01-21T20:53:29.684Z",
+            "createdAt": "2020-05-26T12:54:26.775Z"
+          },
+          {
+            "id": "441868a0-bd9c-1735-7905-2947dd0509fd",
+            "touristId": "3e1d925c-9947-3531-2cba-c1c445038ab6",
+            "touristName": "string",
+            "attractionID": "1b6ad325-de41-a67d-9449-6194bed86979",
+            "attractionTitle": "string",
+            "status": "PENDING",
+            "reservedFor": "2015-08-07T01:13:00.796Z",
+            "createdAt": "1952-11-10T03:09:54.984Z"
+          }
+        ],
+        "number": 4711,
+        "sort": [
+          {
+            "direction": "string",
+            "nullHandling": "string",
+            "ascending": false,
+            "property": "string",
+            "ignoreCase": true
+          },
+          {
+            "direction": "string",
+            "nullHandling": "string",
+            "ascending": true,
+            "property": "string",
+            "ignoreCase": false
+          }
+        ],
+        "numberOfElements": 9449,
+        "last": false,
+        "empty": true
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pageable": {
+            "type": "object",
+            "properties": {
+              "paged": {
+                "type": "boolean"
+              },
+              "pageNumber": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "pageSize": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "offset": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "sort": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "direction": {
+                      "type": "string"
+                    },
+                    "nullHandling": {
+                      "type": "string"
+                    },
+                    "ascending": {
+                      "type": "boolean"
+                    },
+                    "property": {
+                      "type": "string"
+                    },
+                    "ignoreCase": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "unpaged": {
+                "type": "boolean"
+              }
+            }
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "touristId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "touristName": {
+                  "type": "string"
+                },
+                "attractionID": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "attractionTitle": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "PENDING",
+                    "CONFIRMED",
+                    "CANCELLED",
+                    "COMPLETED"
+                  ]
+                },
+                "reservedFor": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "direction": {
+                  "type": "string"
+                },
+                "nullHandling": {
+                  "type": "string"
+                },
+                "ascending": {
+                  "type": "boolean"
+                },
+                "property": {
+                  "type": "string"
+                },
+                "ignoreCase": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      }
+order: 1000

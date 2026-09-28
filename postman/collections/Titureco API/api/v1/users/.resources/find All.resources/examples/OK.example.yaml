@@ -1,0 +1,220 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/users?page=4831&size=327&sort=string,string"
+  method: GET
+  headers:
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  queryParams:
+    page: "4831"
+    size: "327"
+    sort: string,string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      {
+        "totalPages": 1794,
+        "totalElements": 7105,
+        "pageable": {
+          "paged": true,
+          "pageNumber": 5138,
+          "pageSize": 7257,
+          "offset": 1392,
+          "sort": [
+            {
+              "direction": "string",
+              "nullHandling": "string",
+              "ascending": false,
+              "property": "string",
+              "ignoreCase": false
+            },
+            {
+              "direction": "string",
+              "nullHandling": "string",
+              "ascending": false,
+              "property": "string",
+              "ignoreCase": false
+            }
+          ],
+          "unpaged": true
+        },
+        "first": true,
+        "size": 9902,
+        "content": [
+          {
+            "id": "42159082-5117-f3e3-1c3a-465ce83b2482",
+            "name": "string",
+            "role": "GUIDE",
+            "createdAt": "1994-12-21T10:55:03.426Z"
+          },
+          {
+            "id": "613da277-07cd-8280-44de-bdcabb4a19cf",
+            "name": "string",
+            "role": "GUIDE",
+            "createdAt": "1983-06-14T02:07:43.536Z"
+          }
+        ],
+        "number": 7950,
+        "sort": [
+          {
+            "direction": "string",
+            "nullHandling": "string",
+            "ascending": false,
+            "property": "string",
+            "ignoreCase": true
+          },
+          {
+            "direction": "string",
+            "nullHandling": "string",
+            "ascending": false,
+            "property": "string",
+            "ignoreCase": false
+          }
+        ],
+        "numberOfElements": 8135,
+        "last": false,
+        "empty": true
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pageable": {
+            "type": "object",
+            "properties": {
+              "paged": {
+                "type": "boolean"
+              },
+              "pageNumber": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "pageSize": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "offset": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "sort": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "direction": {
+                      "type": "string"
+                    },
+                    "nullHandling": {
+                      "type": "string"
+                    },
+                    "ascending": {
+                      "type": "boolean"
+                    },
+                    "property": {
+                      "type": "string"
+                    },
+                    "ignoreCase": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "unpaged": {
+                "type": "boolean"
+              }
+            }
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "ADMIN",
+                    "TOURIST",
+                    "GUIDE"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "direction": {
+                  "type": "string"
+                },
+                "nullHandling": {
+                  "type": "string"
+                },
+                "ascending": {
+                  "type": "boolean"
+                },
+                "property": {
+                  "type": "string"
+                },
+                "ignoreCase": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      }
+order: 1000

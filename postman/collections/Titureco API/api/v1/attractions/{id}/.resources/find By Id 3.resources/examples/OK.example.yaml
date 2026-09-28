@@ -1,0 +1,83 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/attractions/:id"
+  method: GET
+  headers:
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  pathVariables:
+    id: 852f04d3-ac53-b77c-4592-339efc3a1f48
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      {
+        "id": "737bef48-bf0a-f3e0-2ca0-a464275e8534",
+        "guideId": "6d25d903-ef3c-fe13-15bc-8bfa8bae5a46",
+        "guideName": "string",
+        "title": "string",
+        "description": "string",
+        "price": 8303.163425411683,
+        "availableSpots": 9782,
+        "latitude": 9475.239841286073,
+        "longitude": 1855.1041401748314,
+        "ratingAverage": 5536.986632656133,
+        "reviewCount": 3029
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "guideId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "guideName": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "availableSpots": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "ratingAverage": {
+            "type": "number",
+            "format": "double"
+          },
+          "reviewCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+order: 1000

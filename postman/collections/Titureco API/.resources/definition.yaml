@@ -1,0 +1,10 @@
+$kind: collection
+description: Documentação interativa da API do SaaS B2B2C Titureco.
+variables:
+  baseUrl: http://localhost:8080
+auth:
+  - id: 93cc63bd-21dc-400a-9077-093e196c8658
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{bearerToken}}"

@@ -1,0 +1,74 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/attractions/nearby?lat=2723.4936665662212&lon=2723.4936665662212&radiusKm=10&page=4831&size=327&sort=string,string"
+method: GET
+headers:
+  Accept: "*/*"
+queryParams:
+  - key: lat
+    value: "2723.4936665662212"
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+  - key: lon
+    value: "2723.4936665662212"
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+  - key: radiusKm
+    value: "10"
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "format": "double",
+            "default": 10
+          }
+        }
+      }
+  - key: page
+    value: "4831"
+    disabled: false
+    description: ""
+  - key: size
+    value: "327"
+    disabled: false
+    description: ""
+  - key: sort
+    value: string,string
+    disabled: false
+    description: ""
+body:
+  type: text
+  content: ""
+settings: {}
+examples: ./.resources/get Nearby.resources/examples
+order: 1000

@@ -1,0 +1,42 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/users"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: "*/*"
+body:
+  type: json
+  content: |-
+    {
+      "email": "string",
+      "name": "string",
+      "password": "string"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 50
+        }
+      },
+      "required": [
+        "email",
+        "name",
+        "password"
+      ]
+    }
+settings: {}
+examples: ./.resources/create.resources/examples
+order: 2000

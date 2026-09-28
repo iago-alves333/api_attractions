@@ -1,0 +1,72 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/reviews/:id"
+  method: PUT
+  headers:
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  pathVariables:
+    id: 852f04d3-ac53-b77c-4592-339efc3a1f48
+  body:
+    type: json
+    content: |-
+      {
+        "attractionId": "e05d06e1-892f-d749-5e08-f96897facb4f",
+        "rating": 2,
+        "comment": "string"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      {
+        "id": "1a73d8de-7233-5c41-28a0-7143cbfd863e",
+        "attractionId": "f0f954da-a996-4f53-3410-900ffdcca40d",
+        "touristId": "a384f035-22d1-f349-2533-0a4bc9fe4838",
+        "touristName": "string",
+        "rating": 4088,
+        "comment": "string",
+        "createdAt": "1984-03-14T13:26:11.283Z"
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attractionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "touristId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "touristName": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+order: 1000

@@ -1,0 +1,235 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/reviews/attraction/:attractionId?page=4831&size=327&sort=string,string"
+  method: GET
+  headers:
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  queryParams:
+    page: "4831"
+    size: "327"
+    sort: string,string
+  pathVariables:
+    attractionId: 852f04d3-ac53-b77c-4592-339efc3a1f48
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      {
+        "totalPages": 7020,
+        "totalElements": 3235,
+        "pageable": {
+          "paged": false,
+          "pageNumber": 6354,
+          "pageSize": 3931,
+          "offset": 6664,
+          "sort": [
+            {
+              "direction": "string",
+              "nullHandling": "string",
+              "ascending": true,
+              "property": "string",
+              "ignoreCase": false
+            },
+            {
+              "direction": "string",
+              "nullHandling": "string",
+              "ascending": false,
+              "property": "string",
+              "ignoreCase": false
+            }
+          ],
+          "unpaged": true
+        },
+        "first": false,
+        "size": 9308,
+        "content": [
+          {
+            "id": "2293323b-c0ad-34dd-fdf8-ce661de96afa",
+            "attractionId": "ef6d5408-d3ba-929c-8cca-e3e22231b705",
+            "touristId": "094d6b2a-5161-20cd-886c-9b47db5ba33c",
+            "touristName": "string",
+            "rating": 447,
+            "comment": "string",
+            "createdAt": "2020-01-25T06:38:17.915Z"
+          },
+          {
+            "id": "81e4b16a-298b-1d1b-8b6d-49533743065e",
+            "attractionId": "1c7f880d-057e-210c-b540-788fb111344b",
+            "touristId": "b2425eaa-a4af-173e-7b66-4e5b7b5143ea",
+            "touristName": "string",
+            "rating": 4368,
+            "comment": "string",
+            "createdAt": "1984-12-10T09:01:04.749Z"
+          }
+        ],
+        "number": 9321,
+        "sort": [
+          {
+            "direction": "string",
+            "nullHandling": "string",
+            "ascending": true,
+            "property": "string",
+            "ignoreCase": false
+          },
+          {
+            "direction": "string",
+            "nullHandling": "string",
+            "ascending": true,
+            "property": "string",
+            "ignoreCase": true
+          }
+        ],
+        "numberOfElements": 6621,
+        "last": true,
+        "empty": false
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pageable": {
+            "type": "object",
+            "properties": {
+              "paged": {
+                "type": "boolean"
+              },
+              "pageNumber": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "pageSize": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "offset": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "sort": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "direction": {
+                      "type": "string"
+                    },
+                    "nullHandling": {
+                      "type": "string"
+                    },
+                    "ascending": {
+                      "type": "boolean"
+                    },
+                    "property": {
+                      "type": "string"
+                    },
+                    "ignoreCase": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "unpaged": {
+                "type": "boolean"
+              }
+            }
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "attractionId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "touristId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "touristName": {
+                  "type": "string"
+                },
+                "rating": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "comment": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "direction": {
+                  "type": "string"
+                },
+                "nullHandling": {
+                  "type": "string"
+                },
+                "ascending": {
+                  "type": "boolean"
+                },
+                "property": {
+                  "type": "string"
+                },
+                "ignoreCase": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      }
+order: 1000

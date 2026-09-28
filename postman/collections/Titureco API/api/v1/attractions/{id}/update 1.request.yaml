@@ -1,0 +1,81 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/attractions/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+  Accept: "*/*"
+pathVariables:
+  - key: id
+    value: 852f04d3-ac53-b77c-4592-339efc3a1f48
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+body:
+  type: json
+  content: |-
+    {
+      "availableSpots": 6897,
+      "latitude": 35.23447472869512,
+      "longitude": 3.7085605604642353,
+      "price": 116.18986801075981,
+      "title": "string",
+      "description": "string"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "price": {
+          "type": "number"
+        },
+        "availableSpots": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "latitude": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90,
+          "format": "double"
+        },
+        "longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180,
+          "format": "double"
+        }
+      },
+      "required": [
+        "availableSpots",
+        "latitude",
+        "longitude",
+        "price",
+        "title"
+      ]
+    }
+settings: {}
+examples: ./.resources/update 1.resources/examples
+order: 2000

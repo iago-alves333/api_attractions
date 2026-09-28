@@ -1,0 +1,16 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/reservations?page=4831&size=327&sort=string,string"
+method: GET
+headers:
+  Accept: "*/*"
+queryParams:
+  page: "4831"
+  size: "327"
+  sort: string,string
+body:
+  type: text
+  content: ""
+settings: {}
+examples: ./.resources/find All 2.resources/examples
+order: 1000

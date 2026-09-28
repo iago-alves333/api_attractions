@@ -1,0 +1,35 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/reservations"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: "*/*"
+body:
+  type: json
+  content: |-
+    {
+      "attractionId": "a8ec7d96-a859-0a6b-f331-f6f28cdb1c51",
+      "reservedFor": "2026-06-02T03:25:27.558Z"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "attractionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reservedFor": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "attractionId",
+        "reservedFor"
+      ]
+    }
+settings: {}
+examples: ./.resources/create 2.resources/examples
+order: 2000

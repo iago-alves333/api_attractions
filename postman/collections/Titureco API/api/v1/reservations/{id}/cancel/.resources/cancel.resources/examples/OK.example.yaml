@@ -1,0 +1,75 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/reservations/:id/cancel"
+  method: PATCH
+  headers:
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  pathVariables:
+    id: 852f04d3-ac53-b77c-4592-339efc3a1f48
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      {
+        "id": "7762fe84-1619-3139-5b8f-28bf81bc0aa6",
+        "touristId": "8267db91-d65e-5874-986e-4853cecadf36",
+        "touristName": "string",
+        "attractionID": "aa30e7fa-3880-0cae-a357-bbb341877ed5",
+        "attractionTitle": "string",
+        "status": "CONFIRMED",
+        "reservedFor": "1966-10-21T20:14:49.643Z",
+        "createdAt": "1987-01-17T22:54:53.706Z"
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "touristId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "touristName": {
+            "type": "string"
+          },
+          "attractionID": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attractionTitle": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "CANCELLED",
+              "COMPLETED"
+            ]
+          },
+          "reservedFor": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+order: 1000

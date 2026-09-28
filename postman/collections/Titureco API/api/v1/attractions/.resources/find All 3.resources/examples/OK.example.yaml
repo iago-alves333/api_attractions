@@ -1,0 +1,125 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/attractions?page=4831&size=327&sort=string,string"
+  method: GET
+  headers:
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  queryParams:
+    page: "4831"
+    size: "327"
+    sort: string,string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      {
+        "content": [
+          {
+            "id": "8aa7c756-4350-63ab-33ce-3da1c0e5ec08",
+            "guideId": "175a0a3d-2344-f29a-4229-42dccc6dce9e",
+            "guideName": "string",
+            "title": "string",
+            "description": "string",
+            "price": 639.2113419529854,
+            "availableSpots": 4753,
+            "latitude": 4619.39343851048,
+            "longitude": 9106.495629882811,
+            "ratingAverage": 9868.610174693404,
+            "reviewCount": 713
+          },
+          {
+            "id": "e9ce5f8c-9893-5de7-39f7-5989c7ad7117",
+            "guideId": "22c29383-0836-fd72-4d27-10fd85e07379",
+            "guideName": "string",
+            "title": "string",
+            "description": "string",
+            "price": 1526.0604503325037,
+            "availableSpots": 5195,
+            "latitude": 4823.274649914012,
+            "longitude": 5723.401372460535,
+            "ratingAverage": 2629.2301522718153,
+            "reviewCount": 6799
+          }
+        ],
+        "totalPages": 1973,
+        "totalElements": 4412,
+        "currentPage": 5627
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "guideId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "guideName": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                },
+                "availableSpots": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "latitude": {
+                  "type": "number",
+                  "format": "double"
+                },
+                "longitude": {
+                  "type": "number",
+                  "format": "double"
+                },
+                "ratingAverage": {
+                  "type": "number",
+                  "format": "double"
+                },
+                "reviewCount": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "currentPage": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+order: 1000

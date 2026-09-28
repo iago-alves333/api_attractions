@@ -1,0 +1,28 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/auth/refresh"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: "*/*"
+body:
+  type: json
+  content: |-
+    {
+      "refreshToken": "string"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "refreshToken": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "refreshToken"
+      ]
+    }
+settings: {}
+examples: ./.resources/refresh.resources/examples
+order: 1000
