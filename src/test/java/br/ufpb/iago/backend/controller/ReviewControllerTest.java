@@ -71,7 +71,7 @@ class ReviewControllerTest {
         Page<ReviewResponseDTO> page = new PageImpl<>(List.of(responseDTO));
         when(reviewService.findAll(any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<Page<ReviewResponseDTO>> response = reviewController.findAll(pageable);
+        ResponseEntity<br.ufpb.iago.backend.dto.PageDTO<ReviewResponseDTO>> response = reviewController.findAll(pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -84,7 +84,7 @@ class ReviewControllerTest {
         Page<ReviewResponseDTO> page = new PageImpl<>(List.of(responseDTO));
         when(reviewService.findByAttraction(eq(attrId), any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<Page<ReviewResponseDTO>> response = reviewController.findByAttraction(attrId, pageable);
+        ResponseEntity<br.ufpb.iago.backend.dto.PageDTO<ReviewResponseDTO>> response = reviewController.findByAttraction(attrId, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();

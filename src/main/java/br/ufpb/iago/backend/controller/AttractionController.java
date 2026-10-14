@@ -3,6 +3,7 @@ package br.ufpb.iago.backend.controller;
 import br.ufpb.iago.backend.dto.AttractionRequestDTO;
 import br.ufpb.iago.backend.dto.AttractionResponseDTO;
 import br.ufpb.iago.backend.dto.PageDTO;
+import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.security.CustomUserDetails;
 import br.ufpb.iago.backend.service.AttractionService;
 import jakarta.validation.Valid;
@@ -44,7 +45,7 @@ public class AttractionController {
             @Valid @RequestBody AttractionRequestDTO dto,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
 
-        AttractionResponseDTO response = attractionService.update(id, dto, currentUser.getId());
+        AttractionResponseDTO response = attractionService.update(id, dto, currentUser.getId(), currentUser.getRole() == Role.ADMIN);
         return ResponseEntity.ok(response);
     }
 
@@ -53,7 +54,7 @@ public class AttractionController {
             @PathVariable UUID id,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
 
-        attractionService.delete(id, currentUser.getId());
+        attractionService.delete(id, currentUser.getId(), currentUser.getRole() == Role.ADMIN);
         return ResponseEntity.noContent().build();
     }
 

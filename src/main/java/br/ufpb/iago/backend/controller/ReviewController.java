@@ -1,5 +1,6 @@
 package br.ufpb.iago.backend.controller;
 
+import br.ufpb.iago.backend.dto.PageDTO;
 import br.ufpb.iago.backend.dto.ReviewRequestDTO;
 import br.ufpb.iago.backend.dto.ReviewResponseDTO;
 import br.ufpb.iago.backend.security.CustomUserDetails;
@@ -44,9 +45,9 @@ public class ReviewController {
      * Lista todos os reviews. Acesso público.
      */
     @GetMapping
-    public ResponseEntity<Page<ReviewResponseDTO>> findAll(
+    public ResponseEntity<PageDTO<ReviewResponseDTO>> findAll(
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(reviewService.findAll(pageable));
+        return ResponseEntity.ok(new PageDTO<>(reviewService.findAll(pageable)));
     }
 
     /**
@@ -54,10 +55,10 @@ public class ReviewController {
      * Lista todos os reviews de uma atração específica. Acesso público.
      */
     @GetMapping("/attraction/{attractionId}")
-    public ResponseEntity<Page<ReviewResponseDTO>> findByAttraction(
+    public ResponseEntity<PageDTO<ReviewResponseDTO>> findByAttraction(
             @PathVariable UUID attractionId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(reviewService.findByAttraction(attractionId, pageable));
+        return ResponseEntity.ok(new PageDTO<>(reviewService.findByAttraction(attractionId, pageable)));
     }
 
     /**

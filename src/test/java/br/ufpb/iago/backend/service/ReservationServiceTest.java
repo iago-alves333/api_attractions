@@ -117,6 +117,7 @@ class ReservationServiceTest {
 
             when(userRepository.findById(touristId)).thenReturn(Optional.of(tourist));
             when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(reservationRepository.countByAttractionIdAndStatusInAndReservedForBetween(any(), any(), any(), any())).thenReturn(0L);
             when(reservationRepository.existsByTouristAndAttractionAndStatus(tourist, attraction, Status.PENDING)).thenReturn(false);
             when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
                 Reservation saved = invocation.getArgument(0);
@@ -131,9 +132,8 @@ class ReservationServiceTest {
             assertEquals(attraction.getId(), result.attractionID());
             assertEquals(Status.PENDING, result.status());
             assertEquals(reservedFor, result.reservedFor());
-            assertEquals(2, attraction.getAvailableSpots());
-            verify(attractionRepository).save(attraction);
             verify(reservationRepository).save(any(Reservation.class));
+            verify(attractionRepository, never()).save(any());
         }
 
         @Test
@@ -149,16 +149,17 @@ class ReservationServiceTest {
         }
 
         @Test
-        @DisplayName("deve lançar NoAvailableSpotsException quando não há vagas")
+        @DisplayName("deve lançar NoAvailableSpotsException quando não há vagas no dia")
         void create_semVagas_lancaException() {
             ReservationRequestDTO dto = createReservationRequestDTO(attraction.getId(), LocalDateTime.now().plusDays(1));
-            attraction.setAvailableSpots(0);
+            attraction.setAvailableSpots(2);
 
             when(userRepository.findById(tourist.getId())).thenReturn(Optional.of(tourist));
             when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(reservationRepository.countByAttractionIdAndStatusInAndReservedForBetween(any(), any(), any(), any())).thenReturn(2L);
 
             assertThrows(NoAvailableSpotsException.class, () -> reservationService.create(dto, tourist.getId()));
-            verify(attractionRepository, never()).save(any());
+            verify(reservationRepository, never()).save(any());
         }
 
         @Test
@@ -218,21 +219,18 @@ class ReservationServiceTest {
     class CancelTests {
 
         @Test
-        @DisplayName("deve cancelar reserva pendente e devolver a vaga")
+        @DisplayName("deve cancelar reserva pendente")
         void cancel_reservaPendende_retornaReservaCancelada() {
             reservation.setStatus(Status.PENDING);
-            attraction.setAvailableSpots(1);
 
             when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
             when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
-            when(attractionRepository.save(any(Attraction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             ReservationResponseDTO result = reservationService.cancel(reservation.getId(), tourist.getId());
 
             assertEquals(Status.CANCELLED, result.status());
-            assertEquals(2, attraction.getAvailableSpots());
             assertNotNull(reservation.getCancelledAt());
-            verify(attractionRepository).save(attraction);
+            verify(attractionRepository, never()).save(any());
         }
 
         @Test
@@ -358,12 +356,67 @@ class ReservationServiceTest {
         }
 
         @Test
-        @DisplayName("deve lançar AccessDeniedException quando guia não é dono da atração")
-        void findAllByAttraction_guiaNaoDono_lancaAccessDenied() {
+        @DisplayName("deve permitir que ADMIN veja reservas de atração de outro guia")
+        void findAllByAttraction_admin_retornaReservas() {
+            Page<Reservation> page = new PageImpl<>(List.of(reservation));
+            when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(reservationRepository.findAllByAttractionId(eq(attraction.getId()), any(Pageable.class))).thenReturn(page);
+
+            Page<ReservationResponseDTO> result = reservationService.findAllByAttraction(attraction.getId(), UUID.randomUUID(), true, Pageable.unpaged());
+
+            assertEquals(1, result.getTotalElements());
+        }
+    }
+
+    @Nested
+    @DisplayName("spotsPerDayIsolation()")
+    class SpotsPerDayIsolationTests {
+
+        @Test
+        @DisplayName("deve rejeitar reserva em dia lotado mas permitir em outro dia")
+        void create_diaLotadoRejeita_outroDiaPermite() {
+            LocalDateTime diaLotado = LocalDateTime.now().plusDays(1);
+            LocalDateTime outroDia = LocalDateTime.now().plusDays(2);
+            attraction.setAvailableSpots(2);
+
+            when(userRepository.findById(tourist.getId())).thenReturn(Optional.of(tourist));
             when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
 
-            assertThrows(AccessDeniedException.class,
-                    () -> reservationService.findAllByAttraction(attraction.getId(), anotherUser.getId(), Pageable.unpaged()));
+            // No dia lotado, count == 2 (lotado)
+            when(reservationRepository.countByAttractionIdAndStatusInAndReservedForBetween(
+                    eq(attraction.getId()), any(), eq(diaLotado.toLocalDate().atStartOfDay()), any()
+            )).thenReturn(2L);
+
+            ReservationRequestDTO dtoLotado = createReservationRequestDTO(attraction.getId(), diaLotado);
+            assertThrows(NoAvailableSpotsException.class, () -> reservationService.create(dtoLotado, tourist.getId()));
+
+            // No outro dia, count == 0 (livre)
+            when(reservationRepository.countByAttractionIdAndStatusInAndReservedForBetween(
+                    eq(attraction.getId()), any(), eq(outroDia.toLocalDate().atStartOfDay()), any()
+            )).thenReturn(0L);
+            when(reservationRepository.existsByTouristAndAttractionAndStatus(tourist, attraction, Status.PENDING)).thenReturn(false);
+            when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            ReservationRequestDTO dtoLivre = createReservationRequestDTO(attraction.getId(), outroDia);
+            ReservationResponseDTO result = reservationService.create(dtoLivre, tourist.getId());
+
+            assertNotNull(result);
+            assertEquals(outroDia, result.reservedFor());
+        }
+
+        @Test
+        @DisplayName("deve permitir que ADMIN confirme e complete reserva de qualquer atração")
+        void confirmEComplete_comoAdmin_sucesso() {
+            reservation.setStatus(Status.PENDING);
+            when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+            when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            UUID adminId = UUID.randomUUID();
+            ReservationResponseDTO confirmed = reservationService.confirm(reservation.getId(), adminId, true);
+            assertEquals(Status.CONFIRMED, confirmed.status());
+
+            ReservationResponseDTO completed = reservationService.complete(reservation.getId(), adminId, true);
+            assertEquals(Status.COMPLETED, completed.status());
         }
     }
 }

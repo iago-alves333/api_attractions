@@ -1,7 +1,9 @@
 package br.ufpb.iago.backend.controller;
 
+import br.ufpb.iago.backend.dto.PageDTO;
 import br.ufpb.iago.backend.dto.ReservationRequestDTO;
 import br.ufpb.iago.backend.dto.ReservationResponseDTO;
+import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.security.CustomUserDetails;
 import br.ufpb.iago.backend.service.ReservationService;
 import jakarta.validation.Valid;
@@ -43,11 +45,11 @@ public class ReservationController {
      * Lista todas as reservas do turista autenticado.
      */
     @GetMapping
-    public ResponseEntity<Page<ReservationResponseDTO>> findAll(
+    public ResponseEntity<PageDTO<ReservationResponseDTO>> findAll(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
 
-        return ResponseEntity.ok(reservationService.findAllByTourist(currentUser.getId(), pageable));
+        return ResponseEntity.ok(new PageDTO<>(reservationService.findAllByTourist(currentUser.getId(), pageable)));
     }
 
     /**
@@ -79,20 +81,20 @@ public class ReservationController {
             @PathVariable UUID id,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
 
-        ReservationResponseDTO response = reservationService.confirm(id, currentUser.getId());
+        ReservationResponseDTO response = reservationService.confirm(id, currentUser.getId(), currentUser.getRole() == Role.ADMIN);
         return ResponseEntity.ok(response);
     }
 
     /**
      * PATCH /api/v1/reservations/{id}/complete
-     * Marca uma reserva como concluída. Exige role GUIDE e ser o dono da atração.
+     * Marca uma reserva como concluída. Exige role GUIDE ou ADMIN e ser o dono da atração (ou ADMIN).
      */
     @PatchMapping("/{id}/complete")
     public ResponseEntity<ReservationResponseDTO> complete(
             @PathVariable UUID id,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
 
-        ReservationResponseDTO response = reservationService.complete(id, currentUser.getId());
+        ReservationResponseDTO response = reservationService.complete(id, currentUser.getId(), currentUser.getRole() == Role.ADMIN);
         return ResponseEntity.ok(response);
     }
 
@@ -101,11 +103,11 @@ public class ReservationController {
      * Lista todas as reservas das atrações do guia autenticado.
      */
     @GetMapping("/guide")
-    public ResponseEntity<Page<ReservationResponseDTO>> findAllByGuide(
+    public ResponseEntity<PageDTO<ReservationResponseDTO>> findAllByGuide(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
 
-        return ResponseEntity.ok(reservationService.findAllByGuide(currentUser.getId(), pageable));
+        return ResponseEntity.ok(new PageDTO<>(reservationService.findAllByGuide(currentUser.getId(), pageable)));
     }
 
     /**
@@ -113,11 +115,11 @@ public class ReservationController {
      * Lista todas as reservas de uma atração específica do guia autenticado.
      */
     @GetMapping("/guide/attractions/{attractionId}")
-    public ResponseEntity<Page<ReservationResponseDTO>> findAllByAttraction(
+    public ResponseEntity<PageDTO<ReservationResponseDTO>> findAllByAttraction(
             @PathVariable UUID attractionId,
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
 
-        return ResponseEntity.ok(reservationService.findAllByAttraction(attractionId, currentUser.getId(), pageable));
+        return ResponseEntity.ok(new PageDTO<>(reservationService.findAllByAttraction(attractionId, currentUser.getId(), currentUser.getRole() == Role.ADMIN, pageable)));
     }
 }

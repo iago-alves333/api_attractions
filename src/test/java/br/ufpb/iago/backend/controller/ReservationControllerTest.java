@@ -70,7 +70,7 @@ class ReservationControllerTest {
         Page<ReservationResponseDTO> page = new PageImpl<>(List.of(responseDTO));
         when(reservationService.findAllByTourist(eq(currentUser.getId()), any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<Page<ReservationResponseDTO>> response = reservationController.findAll(currentUser, pageable);
+        ResponseEntity<br.ufpb.iago.backend.dto.PageDTO<ReservationResponseDTO>> response = reservationController.findAll(currentUser, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -100,7 +100,7 @@ class ReservationControllerTest {
     @Test
     @DisplayName("Confirm deve retornar reserva confirmada")
     void testConfirm() {
-        when(reservationService.confirm(resId, currentUser.getId())).thenReturn(responseDTO);
+        when(reservationService.confirm(eq(resId), eq(currentUser.getId()), anyBoolean())).thenReturn(responseDTO);
 
         ResponseEntity<ReservationResponseDTO> response = reservationController.confirm(resId, currentUser);
 
@@ -110,7 +110,7 @@ class ReservationControllerTest {
     @Test
     @DisplayName("Complete deve retornar reserva concluida")
     void testComplete() {
-        when(reservationService.complete(resId, currentUser.getId())).thenReturn(responseDTO);
+        when(reservationService.complete(eq(resId), eq(currentUser.getId()), anyBoolean())).thenReturn(responseDTO);
 
         ResponseEntity<ReservationResponseDTO> response = reservationController.complete(resId, currentUser);
 
@@ -124,7 +124,7 @@ class ReservationControllerTest {
         Page<ReservationResponseDTO> page = new PageImpl<>(List.of(responseDTO));
         when(reservationService.findAllByGuide(eq(currentUser.getId()), any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<Page<ReservationResponseDTO>> response = reservationController.findAllByGuide(currentUser, pageable);
+        ResponseEntity<br.ufpb.iago.backend.dto.PageDTO<ReservationResponseDTO>> response = reservationController.findAllByGuide(currentUser, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();

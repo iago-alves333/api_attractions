@@ -1,5 +1,6 @@
 package br.ufpb.iago.backend.controller;
 
+import br.ufpb.iago.backend.dto.PageDTO;
 import br.ufpb.iago.backend.dto.UserRequestDTO;
 import br.ufpb.iago.backend.dto.UserResponseDTO;
 import br.ufpb.iago.backend.service.UserService;
@@ -38,9 +39,9 @@ public class UserController {
      * Lista todos os usuários. Exige role ADMIN.
      */
     @GetMapping
-    public ResponseEntity<Page<UserResponseDTO>> findAll(
+    public ResponseEntity<PageDTO<UserResponseDTO>> findAll(
             @PageableDefault(size = 10, sort = "name") Pageable pageable) {
-        return ResponseEntity.ok(userService.findAll(pageable));
+        return ResponseEntity.ok(new PageDTO<>(userService.findAll(pageable)));
     }
 
     /**

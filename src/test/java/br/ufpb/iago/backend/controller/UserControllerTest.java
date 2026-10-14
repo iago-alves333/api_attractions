@@ -60,7 +60,7 @@ class UserControllerTest {
         Page<UserResponseDTO> page = new PageImpl<>(List.of(userResponse));
         when(userService.findAll(any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<Page<UserResponseDTO>> response = userController.findAll(pageable);
+        ResponseEntity<br.ufpb.iago.backend.dto.PageDTO<UserResponseDTO>> response = userController.findAll(pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();

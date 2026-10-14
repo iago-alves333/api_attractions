@@ -67,7 +67,7 @@ class AttractionControllerTest {
     @DisplayName("Update deve retornar atração atualizada")
     void testUpdate() {
         AttractionRequestDTO req = new AttractionRequestDTO();
-        when(attractionService.update(attrId, req, currentUser.getId())).thenReturn(responseDTO);
+        when(attractionService.update(eq(attrId), eq(req), eq(currentUser.getId()), anyBoolean())).thenReturn(responseDTO);
 
         ResponseEntity<AttractionResponseDTO> response = attractionController.update(attrId, req, currentUser);
 
@@ -77,7 +77,7 @@ class AttractionControllerTest {
     @Test
     @DisplayName("Delete deve retornar 204")
     void testDelete() {
-        doNothing().when(attractionService).delete(attrId, currentUser.getId());
+        doNothing().when(attractionService).delete(eq(attrId), eq(currentUser.getId()), anyBoolean());
 
         ResponseEntity<Void> response = attractionController.delete(attrId, currentUser);
 

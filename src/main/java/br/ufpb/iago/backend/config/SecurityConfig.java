@@ -59,11 +59,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/attractions/**").hasAnyRole("GUIDE", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/attractions/**").hasAnyRole("GUIDE", "ADMIN")
 
-                        // Reservations: confirm/complete é do GUIDE, o resto é do TOURIST
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/reservations/*/confirm").hasRole("GUIDE")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/reservations/*/complete").hasRole("GUIDE")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/reservations/guide").hasRole("GUIDE")
-                        .requestMatchers("/api/v1/reservations/**").hasRole("TOURIST")
+                        // Reservations: confirm/complete é do GUIDE ou ADMIN, consulta de guia para GUIDE ou ADMIN, o resto para TOURIST ou ADMIN
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/reservations/*/confirm").hasAnyRole("GUIDE", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/reservations/*/complete").hasAnyRole("GUIDE", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reservations/guide/**").hasAnyRole("GUIDE", "ADMIN")
+                        .requestMatchers("/api/v1/reservations/**").hasAnyRole("TOURIST", "ADMIN")
 
                         // Reviews: leitura pública, escrita restrita a TOURIST
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**").permitAll()

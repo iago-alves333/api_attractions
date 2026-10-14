@@ -60,7 +60,7 @@ public class AttractionService {
     }
 
     // ─── READ ─────────────────────────────────────────────────────────────────
-    @Cacheable(value = "attractions", key = "'page_' + #pageable.pageNumber + '_size_' + #pageable.pageSize")
+    @Cacheable(value = "attractions", key = "'page_' + #pageable")
     @Transactional(readOnly = true)
     public PageDTO<AttractionResponseDTO> findAll(Pageable pageable) {
         return new PageDTO<>(attractionRepository.findAll(pageable)
@@ -79,10 +79,16 @@ public class AttractionService {
     @CacheEvict(value = "attractions", allEntries = true)
     @Transactional
     public AttractionResponseDTO update(UUID id, AttractionRequestDTO dto, UUID guideId) {
+        return update(id, dto, guideId, false);
+    }
+
+    @CacheEvict(value = "attractions", allEntries = true)
+    @Transactional
+    public AttractionResponseDTO update(UUID id, AttractionRequestDTO dto, UUID userId, boolean isAdmin) {
         Attraction attraction = attractionRepository.findById(id)
                 .orElseThrow(AttractionNotFoundException::new);
 
-        if (!attraction.getGuide().getId().equals(guideId)) {
+        if (!isAdmin && (attraction.getGuide() == null || !attraction.getGuide().getId().equals(userId))) {
             throw new AccessDeniedException("Você não tem permissão para editar esta atração");
         }
 
@@ -95,10 +101,16 @@ public class AttractionService {
     @CacheEvict(value = "attractions", allEntries = true)
     @Transactional
     public void delete(UUID id, UUID guideId) {
+        delete(id, guideId, false);
+    }
+
+    @CacheEvict(value = "attractions", allEntries = true)
+    @Transactional
+    public void delete(UUID id, UUID userId, boolean isAdmin) {
         Attraction attraction = attractionRepository.findById(id)
                 .orElseThrow(AttractionNotFoundException::new);
 
-        if (!attraction.getGuide().getId().equals(guideId)) {
+        if (!isAdmin && (attraction.getGuide() == null || !attraction.getGuide().getId().equals(userId))) {
             throw new AccessDeniedException("Você não tem permissão para deletar esta atração");
         }
 

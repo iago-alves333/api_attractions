@@ -8,6 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.UUID;
 
 public interface ReservationRepository extends JpaRepository<Reservation, UUID> {
@@ -15,4 +17,5 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
     Page<Reservation> findAllByAttractionGuideId(UUID guideId, Pageable pageable);
     Page<Reservation> findAllByAttractionId(UUID attractionId, Pageable pageable);
     boolean existsByTouristAndAttractionAndStatus(User tourist, Attraction attraction, Status status);
+    long countByAttractionIdAndStatusInAndReservedForBetween(UUID attractionId, Collection<Status> statuses, LocalDateTime start, LocalDateTime end);
 }

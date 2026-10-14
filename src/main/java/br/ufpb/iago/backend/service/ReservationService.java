@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -53,7 +54,6 @@ public class ReservationService {
     // ─── CREATE ───────────────────────────────────────────────────────────────
 
     @Transactional
-    @CacheEvict(value = "attractions", allEntries = true)
     public ReservationResponseDTO create(ReservationRequestDTO dto, UUID touristId) {
         User tourist = userRepository.findById(touristId)
                 .orElseThrow(UserNotFoundException::new);
@@ -65,7 +65,16 @@ public class ReservationService {
             throw new ReservationDateInPastException();
         }
 
-        if (attraction.getAvailableSpots() <= 0) {
+        LocalDateTime startOfDay = dto.getReservedFor().toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = dto.getReservedFor().toLocalDate().atTime(LocalTime.MAX);
+        long activeReservations = reservationRepository.countByAttractionIdAndStatusInAndReservedForBetween(
+                attraction.getId(),
+                List.of(Status.PENDING, Status.CONFIRMED),
+                startOfDay,
+                endOfDay
+        );
+
+        if (activeReservations >= attraction.getAvailableSpots()) {
             throw new NoAvailableSpotsException();
         }
 
@@ -82,10 +91,6 @@ public class ReservationService {
         reservation.setAttraction(attraction);
         reservation.setReservedFor(dto.getReservedFor());
         reservation.setStatus(Status.PENDING);
-
-        // Decrementa vagas disponíveis
-        attraction.setAvailableSpots(attraction.getAvailableSpots() - 1);
-        attractionRepository.save(attraction);
 
         return reservationMapper.toResponseDTO(reservationRepository.save(reservation));
     }
@@ -114,7 +119,6 @@ public class ReservationService {
     // ─── CANCEL ───────────────────────────────────────────────────────────────
 
     @Transactional
-    @CacheEvict(value = "attractions", allEntries = true)
     public ReservationResponseDTO cancel(UUID id, UUID touristId) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(ReservationNotFoundException::new);
@@ -130,11 +134,6 @@ public class ReservationService {
         reservation.setStatus(Status.CANCELLED);
         reservation.setCancelledAt(LocalDateTime.now());
 
-        // Devolve a vaga para a atração
-        Attraction attraction = reservation.getAttraction();
-        attraction.setAvailableSpots(attraction.getAvailableSpots() + 1);
-        attractionRepository.save(attraction);
-
         return reservationMapper.toResponseDTO(reservationRepository.save(reservation));
     }
 
@@ -142,11 +141,16 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponseDTO confirm(UUID id, UUID guideId) {
+        return confirm(id, guideId, false);
+    }
+
+    @Transactional
+    public ReservationResponseDTO confirm(UUID id, UUID userId, boolean isAdmin) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(ReservationNotFoundException::new);
 
         Attraction attraction = reservation.getAttraction();
-        if (attraction.getGuide() == null || !attraction.getGuide().getId().equals(guideId)) {
+        if (!isAdmin && (attraction.getGuide() == null || !attraction.getGuide().getId().equals(userId))) {
             throw new AccessDeniedException("Apenas o guia da atração pode confirmar esta reserva");
         }
 
@@ -162,11 +166,16 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponseDTO complete(UUID id, UUID guideId) {
+        return complete(id, guideId, false);
+    }
+
+    @Transactional
+    public ReservationResponseDTO complete(UUID id, UUID userId, boolean isAdmin) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(ReservationNotFoundException::new);
 
         Attraction attraction = reservation.getAttraction();
-        if (attraction.getGuide() == null || !attraction.getGuide().getId().equals(guideId)) {
+        if (!isAdmin && (attraction.getGuide() == null || !attraction.getGuide().getId().equals(userId))) {
             throw new AccessDeniedException("Apenas o guia da atração pode completar esta reserva");
         }
 
@@ -185,11 +194,18 @@ public class ReservationService {
         return reservationRepository.findAllByAttractionGuideId(guideId, pageable)
                 .map(reservationMapper::toResponseDTO);
     }
+
+    @Transactional(readOnly = true)
     public Page<ReservationResponseDTO> findAllByAttraction(UUID attractionId, UUID guideId, Pageable pageable) {
+        return findAllByAttraction(attractionId, guideId, false, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ReservationResponseDTO> findAllByAttraction(UUID attractionId, UUID userId, boolean isAdmin, Pageable pageable) {
         Attraction attraction = attractionRepository.findById(attractionId)
                 .orElseThrow(AttractionNotFoundException::new);
 
-        if (attraction.getGuide() == null || !attraction.getGuide().getId().equals(guideId)) {
+        if (!isAdmin && (attraction.getGuide() == null || !attraction.getGuide().getId().equals(userId))) {
             throw new AccessDeniedException("Apenas o guia da atração pode ver suas reservas");
         }
 
