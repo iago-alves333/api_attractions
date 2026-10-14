@@ -229,7 +229,7 @@ src/main/java/br/ufpb/iago/backend/
 ├── dto/             # Request e Response DTOs
 ├── exception/       # Exceções de negócio + GlobalExceptionHandler
 ├── mapper/          # MapStruct mappers
-├── model/           # Entidades JPA (User, Attraction, Reservation, Review, RefreshToken, TokenBlacklist)
+├── model/           # Entidades JPA (User, Attraction, Reservation, Review, RefreshToken)
 ├── repository/      # Spring Data JPA repositories
 ├── security/        # JWT filter, service, UserDetails, RateLimitFilter
 └── service/         # Lógica de negócio

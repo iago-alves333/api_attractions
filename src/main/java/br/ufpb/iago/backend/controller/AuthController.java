@@ -1,21 +1,30 @@
 package br.ufpb.iago.backend.controller;
 
 import br.ufpb.iago.backend.dto.*;
+import br.ufpb.iago.backend.exception.TooManyRequestsException;
 import br.ufpb.iago.backend.model.RefreshToken;
-import br.ufpb.iago.backend.model.TokenBlacklist;
 import br.ufpb.iago.backend.model.User;
-import br.ufpb.iago.backend.repository.TokenBlacklistRepository;
 import br.ufpb.iago.backend.repository.UserRepository;
 import br.ufpb.iago.backend.security.CustomUserDetails;
+import br.ufpb.iago.backend.security.HashUtils;
 import br.ufpb.iago.backend.security.JwtService;
 import br.ufpb.iago.backend.service.RefreshTokenService;
 import br.ufpb.iago.backend.service.UserService;
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.ConsumptionProbe;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.function.Supplier;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -24,19 +33,22 @@ public class AuthController {
     private final UserService userService;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
-    private final TokenBlacklistRepository tokenBlacklistRepository;
     private final UserRepository userRepository;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final ProxyManager<String> proxyManager;
 
     public AuthController(UserService userService,
                           JwtService jwtService,
                           RefreshTokenService refreshTokenService,
-                          TokenBlacklistRepository tokenBlacklistRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          StringRedisTemplate stringRedisTemplate,
+                          ProxyManager<String> proxyManager) {
         this.userService = userService;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
-        this.tokenBlacklistRepository = tokenBlacklistRepository;
         this.userRepository = userRepository;
+        this.stringRedisTemplate = stringRedisTemplate;
+        this.proxyManager = proxyManager;
     }
 
     /**
@@ -54,15 +66,28 @@ public class AuthController {
      * e um Refresh Token (longa duração).
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO dto) {
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO dto,
+                                                  HttpServletRequest request) {
+        String clientIp = request.getRemoteAddr();
+        String email = dto.getEmail() != null ? dto.getEmail().toLowerCase().trim() : "";
+        String rateLimitKey = "login_limit:" + clientIp + ":" + email;
+        Supplier<BucketConfiguration> configSupplier = () -> BucketConfiguration.builder()
+                .addLimit(Bandwidth.builder().capacity(5).refillGreedy(5, Duration.ofMinutes(1)).build())
+                .build();
+
+        ConsumptionProbe probe = proxyManager.builder().build(rateLimitKey, configSupplier).tryConsumeAndReturnRemaining(1);
+        if (!probe.isConsumed()) {
+            throw new TooManyRequestsException("Muitas tentativas de login. Tente novamente em instantes.");
+        }
+
         User user = userService.login(dto);
 
-        String accessToken = jwtService.generateToken(user.getEmail(), user.getRole());
+        String accessToken = jwtService.generateToken(user.getId(), user.getRole());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         return ResponseEntity.ok(new LoginResponseDTO(
                 accessToken,
-                refreshToken.getToken(),
+                refreshToken.getRawToken(),
                 user.getId(),
                 user.getName(),
                 user.getRole()
@@ -84,33 +109,43 @@ public class AuthController {
         RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user);
 
         // Gera novo access token
-        String newAccessToken = jwtService.generateToken(user.getEmail(), user.getRole());
+        String newAccessToken = jwtService.generateToken(user.getId(), user.getRole());
 
-        return ResponseEntity.ok(new RefreshResponseDTO(newAccessToken, newRefreshToken.getToken()));
+        return ResponseEntity.ok(new RefreshResponseDTO(newAccessToken, newRefreshToken.getRawToken()));
     }
 
     /**
      * POST /api/v1/auth/logout
-     * Insere o Access Token atual na blacklist e revoga todos os Refresh Tokens do usuário.
+     * Insere o Access Token atual na blacklist Redis e revoga todos os Refresh Tokens do usuário.
      */
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request,
                                        @AuthenticationPrincipal CustomUserDetails currentUser) {
-        // Extrai o access token do header e insere na blacklist
+        // Extrai o access token do header e insere na blacklist do Redis com TTL restante
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String accessToken = authHeader.substring(7);
-
-            TokenBlacklist blacklistEntry = new TokenBlacklist();
-            blacklistEntry.setToken(accessToken);
-            blacklistEntry.setExpiresAt(jwtService.extractExpirationFromToken(accessToken));
-            tokenBlacklistRepository.save(blacklistEntry);
+            try {
+                LocalDateTime expiresAt = jwtService.extractExpirationFromToken(accessToken);
+                long ttlSeconds = Duration.between(LocalDateTime.now(), expiresAt).getSeconds();
+                if (ttlSeconds > 0) {
+                    stringRedisTemplate.opsForValue().set(
+                            "jwt:bl:" + HashUtils.sha256(accessToken),
+                            "1",
+                            Duration.ofSeconds(ttlSeconds)
+                    );
+                }
+            } catch (Exception ignored) {
+                // Token expirado ou inválido
+            }
         }
 
         // Revoga todos os refresh tokens do usuário
-        User user = userRepository.findById(currentUser.getId()).orElse(null);
-        if (user != null) {
-            refreshTokenService.deleteAllByUser(user);
+        if (currentUser != null && currentUser.getId() != null) {
+            User user = userRepository.findById(currentUser.getId()).orElse(null);
+            if (user != null) {
+                refreshTokenService.deleteAllByUser(user);
+            }
         }
 
         return ResponseEntity.noContent().build();

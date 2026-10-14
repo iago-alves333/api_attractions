@@ -1,33 +1,33 @@
 package br.ufpb.iago.backend.security;
 
-import br.ufpb.iago.backend.repository.TokenBlacklistRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService customUserDetailsService;
-    private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final StringRedisTemplate stringRedisTemplate;
 
     public JwtAuthenticationFilter(JwtService jwtService,
                                    CustomUserDetailsService customUserDetailsService,
-                                   TokenBlacklistRepository tokenBlacklistRepository) {
+                                   StringRedisTemplate stringRedisTemplate) {
         this.jwtService = jwtService;
         this.customUserDetailsService = customUserDetailsService;
-        this.tokenBlacklistRepository = tokenBlacklistRepository;
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
     @Override
@@ -44,16 +44,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String token = authHeader.substring(7);
 
-        // Verifica se o token está na blacklist (logout)
-        if (tokenBlacklistRepository.existsByToken(token)) {
+        // Verifica se o token está na blacklist (logout) via Redis
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey("jwt:bl:" + HashUtils.sha256(token)))) {
             chain.doFilter(request, response);
             return;
         }
 
         if (jwtService.isTokenValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                String email = jwtService.extractEmailFromToken(token);
-                UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+                UUID userId = jwtService.extractUserIdFromToken(token);
+                UserDetails userDetails = customUserDetailsService.loadUserById(userId);
 
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
@@ -63,10 +63,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-            } catch (UsernameNotFoundException e) {
-                // Token válido, mas o usuário não existe mais no banco (ex: conta deletada).
-                // Não autentica e deixa a requisição seguir como anônima —
-                // quem decide se o endpoint exige autenticação é o SecurityConfig.
+            } catch (Exception e) {
+                // Token inválido, expirado ou usuário não encontrado
                 SecurityContextHolder.clearContext();
             }
         }

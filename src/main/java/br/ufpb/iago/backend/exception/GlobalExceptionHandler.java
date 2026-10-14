@@ -114,6 +114,13 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, "Violação de integridade dos dados");
     }
 
+    // ─── 429 Too Many Requests ───────────────────────────────────────────────
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyRequests(TooManyRequestsException ex) {
+        return build(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+    }
+
     // ─── 500 Internal Server Error (fallback) ────────────────────────────────
 
     @ExceptionHandler(Exception.class)

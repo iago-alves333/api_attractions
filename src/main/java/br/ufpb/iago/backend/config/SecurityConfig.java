@@ -47,6 +47,7 @@ public class SecurityConfig {
                         // Infraestrutura
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
 
                         // Autenticação: apenas register, login e refresh são públicos
                         .requestMatchers("/api/v1/auth/register").permitAll()

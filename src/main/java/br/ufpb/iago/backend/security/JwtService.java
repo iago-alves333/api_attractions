@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -26,17 +27,25 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String email, Role role) {
+    public String generateToken(UUID userId, Role role) {
+        return generateToken(userId.toString(), role);
+    }
+
+    public String generateToken(String subject, Role role) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + accessTokenExpirationMs);
 
         return Jwts.builder()
-                .subject(email)
+                .subject(subject)
                 .claim("role", role.name())
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    public UUID extractUserIdFromToken(String token) {
+        return UUID.fromString(extractClaims(token).getSubject());
     }
 
     public String extractEmailFromToken(String token) {

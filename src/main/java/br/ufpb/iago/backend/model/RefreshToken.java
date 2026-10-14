@@ -27,6 +27,9 @@ public class RefreshToken {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Transient
+    private String rawToken;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -48,6 +51,14 @@ public class RefreshToken {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getRawToken() {
+        return rawToken != null ? rawToken : token;
+    }
+
+    public void setRawToken(String rawToken) {
+        this.rawToken = rawToken;
     }
 
     public User getUser() {

@@ -67,10 +67,20 @@ public class JwtServiceTest {
     }
 
     @Test
+    void mustExtractUserIdFromTokenSuccessfully(){
+        java.util.UUID userId = java.util.UUID.randomUUID();
+        String token = jwtService.generateToken(userId, Role.TOURIST);
+
+        java.util.UUID extractedId = jwtService.extractUserIdFromToken(token);
+        assertThat(extractedId).isEqualTo(userId);
+    }
+
+    @Test
     void mustValidateTokenCorrectly(){
         String token = jwtService.generateToken("admin@test.com", Role.ADMIN);
         boolean isValid = jwtService.isTokenValid(token);
 
         // Garante que o token é válido
         assertThat(isValid).isTrue();
-    }}
+    }
+}

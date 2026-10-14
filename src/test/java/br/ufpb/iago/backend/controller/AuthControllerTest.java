@@ -1,15 +1,20 @@
 package br.ufpb.iago.backend.controller;
 
 import br.ufpb.iago.backend.dto.*;
+import br.ufpb.iago.backend.exception.TooManyRequestsException;
 import br.ufpb.iago.backend.model.RefreshToken;
 import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.model.User;
-import br.ufpb.iago.backend.repository.TokenBlacklistRepository;
 import br.ufpb.iago.backend.repository.UserRepository;
 import br.ufpb.iago.backend.security.CustomUserDetails;
+import br.ufpb.iago.backend.security.HashUtils;
 import br.ufpb.iago.backend.security.JwtService;
 import br.ufpb.iago.backend.service.RefreshTokenService;
 import br.ufpb.iago.backend.service.UserService;
+import io.github.bucket4j.ConsumptionProbe;
+import io.github.bucket4j.distributed.BucketProxy;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
+import io.github.bucket4j.distributed.proxy.RemoteBucketBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,14 +23,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,10 +53,22 @@ class AuthControllerTest {
     private RefreshTokenService refreshTokenService;
 
     @Mock
-    private TokenBlacklistRepository tokenBlacklistRepository;
+    private UserRepository userRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
+
+    @Mock
+    private ProxyManager<String> proxyManager;
+
+    @Mock
+    private RemoteBucketBuilder<String> bucketBuilder;
+
+    @Mock
+    private BucketProxy bucketProxy;
 
     @InjectMocks
     private AuthController authController;
@@ -69,13 +93,22 @@ class AuthControllerTest {
     @Test
     @DisplayName("Login com credenciais válidas deve retornar 200 e um corpo com o token")
     void testLoginWithValidCredentials_ReturnsOkWithToken() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+
+        ConsumptionProbe probe = mock(ConsumptionProbe.class);
+        when(probe.isConsumed()).thenReturn(true);
+        when(proxyManager.builder()).thenReturn(bucketBuilder);
+        when(bucketBuilder.build(any(String.class), any(java.util.function.Supplier.class))).thenReturn(bucketProxy);
+        when(bucketProxy.tryConsumeAndReturnRemaining(1)).thenReturn(probe);
+
         when(userService.login(any())).thenReturn(validUser);
-        when(jwtService.generateToken(validUser.getEmail(), validUser.getRole())).thenReturn("mocked-jwt-token");
+        when(jwtService.generateToken(validUser.getId(), validUser.getRole())).thenReturn("mocked-jwt-token");
         RefreshToken rt = new RefreshToken();
-        rt.setToken("mocked-refresh-token");
+        rt.setRawToken("mocked-refresh-token");
         when(refreshTokenService.createRefreshToken(validUser)).thenReturn(rt);
 
-        ResponseEntity<LoginResponseDTO> response = authController.login(loginRequest);
+        ResponseEntity<LoginResponseDTO> response = authController.login(loginRequest, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -83,6 +116,24 @@ class AuthControllerTest {
         assertThat(response.getBody().refreshToken()).isEqualTo("mocked-refresh-token");
         
         verify(userService, times(1)).login(loginRequest);
+    }
+
+    @Test
+    @DisplayName("Login com rate limit excedido deve lançar TooManyRequestsException")
+    void testLoginRateLimitExceeded_ThrowsTooManyRequestsException() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+
+        ConsumptionProbe probe = mock(ConsumptionProbe.class);
+        when(probe.isConsumed()).thenReturn(false);
+        when(proxyManager.builder()).thenReturn(bucketBuilder);
+        when(bucketBuilder.build(any(String.class), any(java.util.function.Supplier.class))).thenReturn(bucketProxy);
+        when(bucketProxy.tryConsumeAndReturnRemaining(1)).thenReturn(probe);
+
+        assertThatThrownBy(() -> authController.login(loginRequest, request))
+                .isInstanceOf(TooManyRequestsException.class);
+
+        verifyNoInteractions(userService);
     }
     
     @Test
@@ -110,11 +161,11 @@ class AuthControllerTest {
         oldRt.setToken("old-refresh");
         
         RefreshToken newRt = new RefreshToken();
-        newRt.setToken("new-refresh");
+        newRt.setRawToken("new-refresh");
 
         when(refreshTokenService.validateRefreshToken("old-refresh")).thenReturn(oldRt);
         when(refreshTokenService.createRefreshToken(validUser)).thenReturn(newRt);
-        when(jwtService.generateToken(validUser.getEmail(), validUser.getRole())).thenReturn("new-access");
+        when(jwtService.generateToken(validUser.getId(), validUser.getRole())).thenReturn("new-access");
 
         ResponseEntity<RefreshResponseDTO> response = authController.refresh(req);
 
@@ -131,6 +182,8 @@ class AuthControllerTest {
     void testLogout() {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("Authorization")).thenReturn("Bearer my-token");
+        when(jwtService.extractExpirationFromToken("my-token")).thenReturn(LocalDateTime.now().plusHours(1));
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
         
         CustomUserDetails userDetails = new CustomUserDetails(validUser);
         when(userRepository.findById(validUser.getId())).thenReturn(Optional.of(validUser));
@@ -139,7 +192,7 @@ class AuthControllerTest {
         
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         
-        verify(tokenBlacklistRepository).save(any());
+        verify(valueOperations).set(eq("jwt:bl:" + HashUtils.sha256("my-token")), eq("1"), any(Duration.class));
         verify(refreshTokenService).deleteAllByUser(validUser);
     }
 

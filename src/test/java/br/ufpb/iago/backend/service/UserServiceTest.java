@@ -12,6 +12,7 @@ import br.ufpb.iago.backend.exception.InvalidCredentialsException;
 import br.ufpb.iago.backend.exception.UserNotFoundException;
 import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.model.User;
+import br.ufpb.iago.backend.repository.RefreshTokenRepository;
 import br.ufpb.iago.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,6 +46,9 @@ class UserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
 
     @org.mockito.Spy
     private UserMapper userMapper = org.mapstruct.factory.Mappers.getMapper(UserMapper.class);
@@ -332,6 +336,7 @@ class UserServiceTest {
 
             assertEquals("encoded-nova-senha", tourist.getPassword());
             verify(passwordEncoder).encode("nova-senha");
+            verify(refreshTokenRepository).deleteAllByUser(tourist);
         }
 
         @Test

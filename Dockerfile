@@ -14,11 +14,21 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
+# Dependências e usuário não-root
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && addgroup --system spring && adduser --system --ingroup spring spring
+
+USER spring:spring
+
 # Copia o .jar gerado do estágio anterior
-COPY --from=build /app/target-maven/*.jar app.jar
+COPY --from=build --chown=spring:spring /app/target-maven/*.jar app.jar
 
 # Expõe a porta padrão do Spring Boot
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # Comando para iniciar a aplicação
 ENTRYPOINT ["java", "-jar", "app.jar"]

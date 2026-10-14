@@ -40,12 +40,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui") || path.startsWith("/error")) {
+        if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui") || path.startsWith("/error") || path.equals("/actuator/health")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String ip = getClientIP(request);
+        String ip = request.getRemoteAddr();
         String key = "rate_limit:" + ip;
 
         Supplier<BucketConfiguration> configSupplier = getConfigSupplier();
@@ -74,13 +74,5 @@ public class RateLimitFilter extends OncePerRequestFilter {
                     .addLimit(limit)
                     .build();
         };
-    }
-
-    private String getClientIP(HttpServletRequest request) {
-        String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader == null) {
-            return request.getRemoteAddr();
-        }
-        return xfHeader.split(",")[0];
     }
 }

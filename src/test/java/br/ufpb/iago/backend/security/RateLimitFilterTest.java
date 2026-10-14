@@ -69,7 +69,7 @@ class RateLimitFilterTest {
     @Test
     void doFilterInternal_shouldAllowRequest_whenTokensAvailable() throws Exception {
         when(request.getRequestURI()).thenReturn("/api/v1/attractions");
-        when(request.getHeader("X-Forwarded-For")).thenReturn("192.168.1.1");
+        when(request.getRemoteAddr()).thenReturn("192.168.1.1");
         
         when(proxyManager.builder()).thenReturn(bucketBuilder);
         when(bucketBuilder.build(any(String.class), any(Supplier.class))).thenReturn(bucketProxy);

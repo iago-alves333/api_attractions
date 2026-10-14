@@ -61,8 +61,10 @@ class RefreshTokenServiceTest {
 
         RefreshToken saved = captor.getValue();
         assertThat(saved.getUser()).isEqualTo(user);
-        assertThat(saved.getToken()).isNotBlank();
-        assertThat(UUID.fromString(saved.getToken())).isNotNull(); // deve ser um UUID válido
+        assertThat(saved.getToken()).isNotBlank().hasSize(64); // SHA-256 hash (64 hex characters)
+        assertThat(result.getRawToken()).isNotBlank();
+        assertThat(UUID.fromString(result.getRawToken())).isNotNull(); // Raw token deve ser UUID
+        assertThat(saved.getToken()).isEqualTo(br.ufpb.iago.backend.security.HashUtils.sha256(result.getRawToken()));
         assertThat(result).isSameAs(saved);
     }
 
@@ -94,47 +96,63 @@ class RefreshTokenServiceTest {
         RefreshToken token2 = refreshTokenService.createRefreshToken(user);
 
         assertThat(token1.getToken()).isNotEqualTo(token2.getToken());
+        assertThat(token1.getRawToken()).isNotEqualTo(token2.getRawToken());
     }
 
     // ---------------------- validateRefreshToken ----------------------
 
     @Test
     void validateRefreshToken_tokenValidoENaoExpirado_deveRetornarRefreshToken() {
+        String rawToken = "token-valido";
+        String hashedToken = br.ufpb.iago.backend.security.HashUtils.sha256(rawToken);
+
         RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setToken("token-valido");
+        refreshToken.setToken(hashedToken);
         refreshToken.setUser(user);
         refreshToken.setExpiresAt(LocalDateTime.now().plusMinutes(10));
 
-        when(refreshTokenRepository.findByToken("token-valido"))
+        when(refreshTokenRepository.findByToken(hashedToken))
                 .thenReturn(Optional.of(refreshToken));
 
-        RefreshToken result = refreshTokenService.validateRefreshToken("token-valido");
+        RefreshToken result = refreshTokenService.validateRefreshToken(rawToken);
 
         assertThat(result).isEqualTo(refreshToken);
-        verify(refreshTokenRepository).findByToken("token-valido");
+        verify(refreshTokenRepository).findByToken(hashedToken);
     }
 
     @Test
     void validateRefreshToken_tokenInexistente_deveLancarInvalidRefreshTokenException() {
-        when(refreshTokenRepository.findByToken("token-inexistente"))
+        String rawToken = "token-inexistente";
+        String hashedToken = br.ufpb.iago.backend.security.HashUtils.sha256(rawToken);
+
+        when(refreshTokenRepository.findByToken(hashedToken))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> refreshTokenService.validateRefreshToken("token-inexistente"))
+        assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(rawToken))
                 .isInstanceOf(InvalidRefreshTokenException.class);
     }
 
     @Test
     void validateRefreshToken_tokenExpirado_deveLancarExpiredRefreshTokenException() {
+        String rawToken = "token-expirado";
+        String hashedToken = br.ufpb.iago.backend.security.HashUtils.sha256(rawToken);
+
         RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setToken("token-expirado");
+        refreshToken.setToken(hashedToken);
         refreshToken.setUser(user);
         refreshToken.setExpiresAt(LocalDateTime.now().minusMinutes(1));
 
-        when(refreshTokenRepository.findByToken("token-expirado"))
+        when(refreshTokenRepository.findByToken(hashedToken))
                 .thenReturn(Optional.of(refreshToken));
 
-        assertThatThrownBy(() -> refreshTokenService.validateRefreshToken("token-expirado"))
+        assertThatThrownBy(() -> refreshTokenService.validateRefreshToken(rawToken))
                 .isInstanceOf(ExpiredRefreshTokenException.class);
+    }
+
+    @Test
+    void purgeExpiredTokens_deveDeletarTokensExpiradosAntesDeAgora() {
+        refreshTokenService.purgeExpiredTokens();
+        verify(refreshTokenRepository).deleteByExpiresAtBefore(any(LocalDateTime.class));
     }
 
     // ---------------------- deleteByToken ----------------------

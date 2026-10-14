@@ -26,25 +26,30 @@ public class RefreshTokenService {
     }
 
     /**
-     * Cria um novo refresh token para o usuário e salva no banco.
-     * O token é um UUID aleatório (opaco), não um JWT.
+     * Cria um novo refresh token para o usuário e salva no banco usando hash SHA-256.
+     * O token bruto é retornado na propriedade rawToken da entidade.
      */
     @Transactional
     public RefreshToken createRefreshToken(User user) {
+        String raw = UUID.randomUUID().toString();
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
-        refreshToken.setToken(UUID.randomUUID().toString());
+        refreshToken.setToken(br.ufpb.iago.backend.security.HashUtils.sha256(raw));
+        refreshToken.setRawToken(raw);
         refreshToken.setExpiresAt(LocalDateTime.now().plusNanos(refreshExpirationMs * 1_000_000L));
-        return refreshTokenRepository.save(refreshToken);
+        RefreshToken saved = refreshTokenRepository.save(refreshToken);
+        saved.setRawToken(raw);
+        return saved;
     }
 
     /**
-     * Valida o refresh token: verifica se existe no banco e se não expirou.
+     * Valida o refresh token: verifica se o hash existe no banco e se não expirou.
      * Retorna o RefreshToken (com o User associado) se válido.
      */
     @Transactional(readOnly = true)
-    public RefreshToken validateRefreshToken(String token) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
+    public RefreshToken validateRefreshToken(String rawToken) {
+        String tokenHash = br.ufpb.iago.backend.security.HashUtils.sha256(rawToken);
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(tokenHash)
                 .orElseThrow(InvalidRefreshTokenException::new);
         if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new ExpiredRefreshTokenException();
@@ -66,5 +71,14 @@ public class RefreshTokenService {
     @Transactional
     public void deleteAllByUser(User user) {
         refreshTokenRepository.deleteAllByUser(user);
+    }
+
+    /**
+     * Limpa periodicamente refresh tokens expirados do banco.
+     */
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 3 * * *")
+    @Transactional
+    public void purgeExpiredTokens() {
+        refreshTokenRepository.deleteByExpiresAtBefore(LocalDateTime.now());
     }
 }

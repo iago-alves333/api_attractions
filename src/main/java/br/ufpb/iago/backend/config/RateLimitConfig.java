@@ -24,12 +24,20 @@ public class RateLimitConfig {
     @Value("${spring.data.redis.port:6379}")
     private int redisPort;
 
+    @Value("${spring.data.redis.password:}")
+    private String redisPassword;
+
     @Bean
     public RedisClient redisClient() {
-        return RedisClient.create(RedisURI.builder()
+        RedisURI.Builder builder = RedisURI.builder()
                 .withHost(redisHost)
-                .withPort(redisPort)
-                .build());
+                .withPort(redisPort);
+
+        if (redisPassword != null && !redisPassword.isBlank()) {
+            builder.withPassword(redisPassword.toCharArray());
+        }
+
+        return RedisClient.create(builder.build());
     }
 
     @Bean

@@ -13,6 +13,7 @@ import br.ufpb.iago.backend.exception.InvalidCredentialsException;
 import br.ufpb.iago.backend.exception.UserNotFoundException;
 import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.model.User;
+import br.ufpb.iago.backend.repository.RefreshTokenRepository;
 import br.ufpb.iago.backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,11 +32,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       UserMapper userMapper,
+                       RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     // ─── AUTH ─────────────────────────────────────────────────────────────────
@@ -115,6 +121,7 @@ public class UserService {
 
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
+            refreshTokenRepository.deleteAllByUser(user);
         }
 
         return userMapper.toResponseDTO(userRepository.save(user));
