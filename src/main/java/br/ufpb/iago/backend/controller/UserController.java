@@ -5,7 +5,6 @@ import br.ufpb.iago.backend.dto.UserRequestDTO;
 import br.ufpb.iago.backend.dto.UserResponseDTO;
 import br.ufpb.iago.backend.service.UserService;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;

@@ -69,7 +69,7 @@ public class AuthController {
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO dto,
                                                   HttpServletRequest request) {
         String clientIp = request.getRemoteAddr();
-        String email = dto.getEmail() != null ? dto.getEmail().toLowerCase().trim() : "";
+        String email = dto.email() != null ? dto.email().toLowerCase().trim() : "";
         String rateLimitKey = "login_limit:" + clientIp + ":" + email;
         Supplier<BucketConfiguration> configSupplier = () -> BucketConfiguration.builder()
                 .addLimit(Bandwidth.builder().capacity(5).refillGreedy(5, Duration.ofMinutes(1)).build())
@@ -101,7 +101,7 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<RefreshResponseDTO> refresh(@Valid @RequestBody RefreshRequestDTO dto) {
         // Valida o refresh token existente
-        RefreshToken oldRefreshToken = refreshTokenService.validateRefreshToken(dto.getRefreshToken());
+        RefreshToken oldRefreshToken = refreshTokenService.validateRefreshToken(dto.refreshToken());
         User user = oldRefreshToken.getUser();
 
         // Rotação: remove o token antigo e cria um novo

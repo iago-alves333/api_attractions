@@ -40,7 +40,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui") || path.startsWith("/error") || path.equals("/actuator/health")) {
+        if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui") || path.startsWith("/error") || path.startsWith("/actuator/")) {
             filterChain.doFilter(request, response);
             return;
         }

@@ -80,18 +80,11 @@ class UserServiceTest {
     }
 
     private UserRequestDTO createRegisterDTO(String name, String email, String password) {
-        UserRequestDTO dto = new UserRequestDTO();
-        dto.setName(name);
-        dto.setEmail(email);
-        dto.setPassword(password);
-        return dto;
+        return new UserRequestDTO(name, email, password);
     }
 
     private LoginRequestDTO createLoginDTO(String email, String password) {
-        LoginRequestDTO dto = new LoginRequestDTO();
-        dto.setEmail(email);
-        dto.setPassword(password);
-        return dto;
+        return new LoginRequestDTO(email, password);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -264,8 +257,7 @@ class UserServiceTest {
         @DisplayName("Deve atualizar apenas o nome quando só o nome é enviado")
         void updateProfile_apenasNome_atualizaSoNome() {
             UUID id = tourist.getId();
-            UpdateProfileDTO dto = new UpdateProfileDTO();
-            dto.setName("Novo Nome");
+            UpdateProfileDTO dto = new UpdateProfileDTO("Novo Nome", null, null);
 
             when(userRepository.findById(id)).thenReturn(Optional.of(tourist));
             when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
@@ -281,8 +273,7 @@ class UserServiceTest {
         @DisplayName("Deve atualizar o email quando novo email é válido")
         void updateProfile_emailNovo_atualizaEmail() {
             UUID id = tourist.getId();
-            UpdateProfileDTO dto = new UpdateProfileDTO();
-            dto.setEmail("novoemail@test.com");
+            UpdateProfileDTO dto = new UpdateProfileDTO(null, "novoemail@test.com", null);
 
             when(userRepository.findById(id)).thenReturn(Optional.of(tourist));
             when(userRepository.findByEmail("novoemail@test.com")).thenReturn(Optional.empty());
@@ -297,8 +288,7 @@ class UserServiceTest {
         @DisplayName("Deve lançar DuplicateEmailException quando novo email já existe")
         void updateProfile_emailJaExiste_lancaDuplicateEmail() {
             UUID id = tourist.getId();
-            UpdateProfileDTO dto = new UpdateProfileDTO();
-            dto.setEmail("guia@test.com");
+            UpdateProfileDTO dto = new UpdateProfileDTO(null, "guia@test.com", null);
 
             when(userRepository.findById(id)).thenReturn(Optional.of(tourist));
             when(userRepository.findByEmail("guia@test.com")).thenReturn(Optional.of(guide));
@@ -312,8 +302,7 @@ class UserServiceTest {
         @DisplayName("Deve permitir manter o mesmo email sem erro")
         void updateProfile_mesmoEmail_naoLancaErro() {
             UUID id = tourist.getId();
-            UpdateProfileDTO dto = new UpdateProfileDTO();
-            dto.setEmail("turista@test.com");
+            UpdateProfileDTO dto = new UpdateProfileDTO(null, "turista@test.com", null);
 
             when(userRepository.findById(id)).thenReturn(Optional.of(tourist));
             when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
@@ -325,8 +314,7 @@ class UserServiceTest {
         @DisplayName("Deve codificar a nova senha ao atualizar")
         void updateProfile_novaSenha_codificaSenha() {
             UUID id = tourist.getId();
-            UpdateProfileDTO dto = new UpdateProfileDTO();
-            dto.setPassword("nova-senha");
+            UpdateProfileDTO dto = new UpdateProfileDTO(null, null, "nova-senha");
 
             when(userRepository.findById(id)).thenReturn(Optional.of(tourist));
             when(passwordEncoder.encode("nova-senha")).thenReturn("encoded-nova-senha");
@@ -343,8 +331,7 @@ class UserServiceTest {
         @DisplayName("Deve lançar UserNotFoundException quando ID não existe")
         void updateProfile_idInexistente_lancaUserNotFound() {
             UUID id = UUID.randomUUID();
-            UpdateProfileDTO dto = new UpdateProfileDTO();
-            dto.setName("Qualquer");
+            UpdateProfileDTO dto = new UpdateProfileDTO("Qualquer", null, null);
 
             when(userRepository.findById(id)).thenReturn(Optional.empty());
 
@@ -356,7 +343,7 @@ class UserServiceTest {
         @DisplayName("Deve ignorar campos nulos — não altera nada")
         void updateProfile_camposNulos_naoAltera() {
             UUID id = tourist.getId();
-            UpdateProfileDTO dto = new UpdateProfileDTO();
+            UpdateProfileDTO dto = new UpdateProfileDTO(null, null, null);
             // name, email, password todos null
 
             when(userRepository.findById(id)).thenReturn(Optional.of(tourist));
@@ -430,23 +417,36 @@ class UserServiceTest {
     class DeleteTests {
 
         @Test
-        @DisplayName("Deve deletar usuário existente")
+        @DisplayName("Deve deletar usuário existente e revogar seus refresh tokens")
         void delete_idExistente_deletaComSucesso() {
             UUID id = tourist.getId();
-            when(userRepository.existsById(id)).thenReturn(true);
+            when(userRepository.findById(id)).thenReturn(Optional.of(tourist));
+            when(userRepository.hasLinkedRecords(id)).thenReturn(false);
 
             assertDoesNotThrow(() -> userService.delete(id));
-            verify(userRepository).deleteById(id);
+            verify(refreshTokenRepository).deleteAllByUser(tourist);
+            verify(userRepository).delete(tourist);
+        }
+
+        @Test
+        @DisplayName("Deve lançar BusinessException quando usuário possui registros vinculados")
+        void delete_comRegistrosVinculados_lancaBusinessException() {
+            UUID id = tourist.getId();
+            when(userRepository.findById(id)).thenReturn(Optional.of(tourist));
+            when(userRepository.hasLinkedRecords(id)).thenReturn(true);
+
+            assertThrows(br.ufpb.iago.backend.exception.BusinessException.class, () -> userService.delete(id));
+            verify(userRepository, never()).delete(any());
         }
 
         @Test
         @DisplayName("Deve lançar UserNotFoundException quando ID não existe")
         void delete_idInexistente_lancaUserNotFound() {
             UUID id = UUID.randomUUID();
-            when(userRepository.existsById(id)).thenReturn(false);
+            when(userRepository.findById(id)).thenReturn(Optional.empty());
 
             assertThrows(UserNotFoundException.class, () -> userService.delete(id));
-            verify(userRepository, never()).deleteById(any());
+            verify(userRepository, never()).delete(any());
         }
     }
 

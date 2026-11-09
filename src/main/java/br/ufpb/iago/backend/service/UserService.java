@@ -8,6 +8,7 @@ import br.ufpb.iago.backend.dto.UserRequestDTO;
 import br.ufpb.iago.backend.dto.UserResponseDTO;
 import br.ufpb.iago.backend.exception.AdminRoleChangeException;
 import br.ufpb.iago.backend.exception.AlreadyGuideException;
+import br.ufpb.iago.backend.exception.BusinessException;
 import br.ufpb.iago.backend.exception.DuplicateEmailException;
 import br.ufpb.iago.backend.exception.InvalidCredentialsException;
 import br.ufpb.iago.backend.exception.UserNotFoundException;
@@ -15,16 +16,13 @@ import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.model.User;
 import br.ufpb.iago.backend.repository.RefreshTokenRepository;
 import br.ufpb.iago.backend.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 @Service
 public class UserService {
@@ -54,10 +52,10 @@ public class UserService {
      */
     @Transactional(readOnly = true)
     public User login(LoginRequestDTO dto) {
-        User user = userRepository.findByEmail(dto.getEmail())
+        User user = userRepository.findByEmail(dto.email())
                 .orElseThrow(InvalidCredentialsException::new);
 
-        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
             throw new InvalidCredentialsException();
         }
 
@@ -68,14 +66,14 @@ public class UserService {
 
     @Transactional
     public UserResponseDTO saveUser(UserRequestDTO dto) {
-        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(dto.email()).isPresent()) {
             throw new DuplicateEmailException();
         }
 
         User user = new User();
-        user.setName(dto.getName());
-        user.setEmail(dto.getEmail());
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setName(dto.name());
+        user.setEmail(dto.email());
+        user.setPassword(passwordEncoder.encode(dto.password()));
         user.setRole(Role.TOURIST);
 
         return userMapper.toResponseDTO(userRepository.save(user));
@@ -107,20 +105,20 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        if (dto.getName() != null && !dto.getName().isBlank()) {
-            user.setName(dto.getName());
+        if (dto.name() != null && !dto.name().isBlank()) {
+            user.setName(dto.name());
         }
 
-        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
-            if (!dto.getEmail().equals(user.getEmail()) &&
-                    userRepository.findByEmail(dto.getEmail()).isPresent()) {
+        if (dto.email() != null && !dto.email().isBlank()) {
+            if (!dto.email().equals(user.getEmail()) &&
+                    userRepository.findByEmail(dto.email()).isPresent()) {
                 throw new DuplicateEmailException("Email já cadastrado por outro usuário");
             }
-            user.setEmail(dto.getEmail());
+            user.setEmail(dto.email());
         }
 
-        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
-            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        if (dto.password() != null && !dto.password().isBlank()) {
+            user.setPassword(passwordEncoder.encode(dto.password()));
             refreshTokenRepository.deleteAllByUser(user);
         }
 
@@ -154,10 +152,15 @@ public class UserService {
 
     @Transactional
     public void delete(UUID id) {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException();
+        User user = userRepository.findById(id)
+                .orElseThrow(UserNotFoundException::new);
+
+        if (userRepository.hasLinkedRecords(id)) {
+            throw new BusinessException("Não é possível excluir usuário que possui atrações, reservas ou avaliações vinculadas");
         }
-        userRepository.deleteById(id);
+
+        refreshTokenRepository.deleteAllByUser(user);
+        userRepository.delete(user);
     }
 
 }

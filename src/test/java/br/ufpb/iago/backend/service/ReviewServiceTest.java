@@ -92,11 +92,7 @@ class ReviewServiceTest {
     }
 
     private ReviewRequestDTO createRequestDTO(UUID attractionId, int rating, String comment) {
-        ReviewRequestDTO dto = new ReviewRequestDTO();
-        dto.setAttractionId(attractionId);
-        dto.setRating(rating);
-        dto.setComment(comment);
-        return dto;
+        return new ReviewRequestDTO(attractionId, rating, comment);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -153,7 +149,7 @@ class ReviewServiceTest {
             UUID touristId = tourist.getId();
 
             when(userRepository.findById(touristId)).thenReturn(Optional.of(tourist));
-            when(attractionRepository.findById(dto.getAttractionId())).thenReturn(Optional.empty());
+            when(attractionRepository.findById(dto.attractionId())).thenReturn(Optional.empty());
 
             assertThrows(AttractionNotFoundException.class, () -> reviewService.create(dto, touristId));
         }

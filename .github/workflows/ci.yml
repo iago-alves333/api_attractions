@@ -24,6 +24,10 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # Passo 3: Rodar os testes do Mockito
+      # Passo 3: Rodar build e testes (unitários + integração)
       - name: Build e Testes
-        run: mvn clean test
+        run: mvn clean verify
+
+      # Passo 4: Validar build da imagem Docker
+      - name: Build da imagem Docker
+        run: docker build -t titureco-backend:ci .

@@ -54,7 +54,7 @@ class AttractionControllerTest {
     @Test
     @DisplayName("Create deve retornar 201 e dados")
     void testCreate() {
-        AttractionRequestDTO req = new AttractionRequestDTO();
+        AttractionRequestDTO req = new AttractionRequestDTO("Attr", "Desc", BigDecimal.TEN, 10, -7.1, -34.8);
         when(attractionService.create(req, currentUser.getId())).thenReturn(responseDTO);
 
         ResponseEntity<AttractionResponseDTO> response = attractionController.create(req, currentUser);
@@ -66,7 +66,7 @@ class AttractionControllerTest {
     @Test
     @DisplayName("Update deve retornar atração atualizada")
     void testUpdate() {
-        AttractionRequestDTO req = new AttractionRequestDTO();
+        AttractionRequestDTO req = new AttractionRequestDTO("Attr", "Desc", BigDecimal.TEN, 10, -7.1, -34.8);
         when(attractionService.update(eq(attrId), eq(req), eq(currentUser.getId()), anyBoolean())).thenReturn(responseDTO);
 
         ResponseEntity<AttractionResponseDTO> response = attractionController.update(attrId, req, currentUser);

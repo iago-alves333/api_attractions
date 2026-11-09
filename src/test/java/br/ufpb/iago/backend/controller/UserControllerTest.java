@@ -44,7 +44,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Create User deve retornar 201 e dados")
     void testCreate() {
-        UserRequestDTO req = new UserRequestDTO();
+        UserRequestDTO req = new UserRequestDTO("User", "user@test.com", "senha123");
         when(userService.saveUser(req)).thenReturn(userResponse);
 
         ResponseEntity<UserResponseDTO> response = userController.create(req);

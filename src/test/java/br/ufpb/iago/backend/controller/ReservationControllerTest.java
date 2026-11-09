@@ -54,7 +54,7 @@ class ReservationControllerTest {
     @Test
     @DisplayName("Create deve retornar 201")
     void testCreate() {
-        ReservationRequestDTO req = new ReservationRequestDTO();
+        ReservationRequestDTO req = new ReservationRequestDTO(UUID.randomUUID(), LocalDateTime.now().plusDays(1));
         when(reservationService.create(req, currentUser.getId())).thenReturn(responseDTO);
 
         ResponseEntity<ReservationResponseDTO> response = reservationController.create(req, currentUser);

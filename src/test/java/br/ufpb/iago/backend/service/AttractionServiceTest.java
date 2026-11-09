@@ -79,14 +79,7 @@ class AttractionServiceTest {
     }
 
     private AttractionRequestDTO createRequestDTO() {
-        AttractionRequestDTO dto = new AttractionRequestDTO();
-        dto.setTitle("Nova Atração");
-        dto.setDescription("Descrição");
-        dto.setPrice(new BigDecimal("100.00"));
-        dto.setAvailableSpots(20);
-        dto.setLatitude(-7.1);
-        dto.setLongitude(-34.8);
-        return dto;
+        return new AttractionRequestDTO("Nova Atração", "Descrição", new BigDecimal("100.00"), 20, -7.1, -34.8);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -113,8 +106,8 @@ class AttractionServiceTest {
             AttractionResponseDTO result = attractionService.create(dto, guideId);
 
             assertNotNull(result);
-            assertEquals(dto.getTitle(), result.title());
-            assertEquals(dto.getPrice(), result.price());
+            assertEquals(dto.title(), result.title());
+            assertEquals(dto.price(), result.price());
             verify(attractionRepository).save(any(Attraction.class));
         }
 
@@ -149,8 +142,8 @@ class AttractionServiceTest {
 
             PageDTO<AttractionResponseDTO> result = attractionService.findAll(pageable);
 
-            assertEquals(1, result.getTotalElements());
-            assertEquals(attraction.getId(), result.getContent().get(0).id());
+            assertEquals(1, result.totalElements());
+            assertEquals(attraction.getId(), result.content().get(0).id());
         }
 
         @Test
@@ -194,8 +187,8 @@ class AttractionServiceTest {
             AttractionResponseDTO result = attractionService.update(attraction.getId(), dto, guideId);
 
             assertNotNull(result);
-            assertEquals(dto.getTitle(), result.title());
-            assertEquals(dto.getPrice(), result.price());
+            assertEquals(dto.title(), result.title());
+            assertEquals(dto.price(), result.price());
         }
 
         @Test
@@ -258,8 +251,8 @@ class AttractionServiceTest {
 
             PageDTO<AttractionResponseDTO> result = attractionService.searchByTitle("Praia", Pageable.unpaged());
 
-            assertEquals(1, result.getTotalElements());
-            assertEquals("Praia", result.getContent().get(0).title());
+            assertEquals(1, result.totalElements());
+            assertEquals("Praia", result.content().get(0).title());
         }
 
         @Test
@@ -271,7 +264,7 @@ class AttractionServiceTest {
 
             PageDTO<AttractionResponseDTO> result = attractionService.getNearbyAttractions(-7.1, -34.8, 0, Pageable.unpaged());
 
-            assertEquals(1, result.getTotalElements());
+            assertEquals(1, result.totalElements());
             verify(attractionRepository).findNearby(eq(-7.1), eq(-34.8), eq(defaultRadiusMeters), any(Pageable.class));
         }
 
@@ -285,7 +278,7 @@ class AttractionServiceTest {
 
             PageDTO<AttractionResponseDTO> result = attractionService.getNearbyAttractions(-7.1, -34.8, radiusKm, Pageable.unpaged());
 
-            assertEquals(1, result.getTotalElements());
+            assertEquals(1, result.totalElements());
             verify(attractionRepository).findNearby(eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class));
         }
 
@@ -298,7 +291,7 @@ class AttractionServiceTest {
 
             PageDTO<AttractionResponseDTO> result = attractionService.searchAttractions("Praia", -7.1, -34.8, 20.0, Pageable.unpaged());
 
-            assertEquals(1, result.getTotalElements());
+            assertEquals(1, result.totalElements());
             verify(attractionRepository).searchByKeywordAndLocation(eq("Praia"), eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class));
         }
     }

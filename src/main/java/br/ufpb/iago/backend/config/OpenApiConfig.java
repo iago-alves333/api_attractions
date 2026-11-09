@@ -19,7 +19,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Titureco API")
                         .version("1.0")
-                        .description("Documentação interativa da API do SaaS B2B2C Titureco."))
+                        .description("Documentação interativa da API REST da plataforma Titureco (gestão de atrações turísticas, reservas georreferenciadas e avaliações)."))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName, new SecurityScheme()

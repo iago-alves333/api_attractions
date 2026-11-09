@@ -88,10 +88,7 @@ class ReservationServiceTest {
     }
 
     private ReservationRequestDTO createReservationRequestDTO(UUID attractionId, LocalDateTime reservedFor) {
-        ReservationRequestDTO requestDTO = new ReservationRequestDTO();
-        requestDTO.setAttractionId(attractionId);
-        requestDTO.setReservedFor(reservedFor);
-        return requestDTO;
+        return new ReservationRequestDTO(attractionId, reservedFor);
     }
 
     private Reservation createSavedReservation() {
@@ -129,7 +126,7 @@ class ReservationServiceTest {
 
             assertNotNull(result);
             assertEquals(touristId, result.touristId());
-            assertEquals(attraction.getId(), result.attractionID());
+            assertEquals(attraction.getId(), result.attractionId());
             assertEquals(Status.PENDING, result.status());
             assertEquals(reservedFor, result.reservedFor());
             verify(reservationRepository).save(any(Reservation.class));

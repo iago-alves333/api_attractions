@@ -85,9 +85,7 @@ class AuthControllerTest {
         validUser.setPassword("encoded-password123");
         validUser.setRole(Role.GUIDE);
 
-        loginRequest = new LoginRequestDTO();
-        loginRequest.setEmail("test@gmail.com");
-        loginRequest.setPassword("password123");
+        loginRequest = new LoginRequestDTO("test@gmail.com", "password123");
     }
 
     @Test
@@ -139,7 +137,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("Register com dados válidos deve retornar 201 e dados do usuário")
     void testRegister_ReturnsCreated() {
-        UserRequestDTO req = new UserRequestDTO();
+        UserRequestDTO req = new UserRequestDTO("Test", "test@gmail.com", "password123");
         UserResponseDTO resp = new UserResponseDTO(UUID.randomUUID(), "Test", Role.TOURIST, null);
         
         when(userService.saveUser(req)).thenReturn(resp);
@@ -153,8 +151,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("Refresh deve retornar novo token e novo refresh token")
     void testRefresh_ReturnsOk() {
-        RefreshRequestDTO req = new RefreshRequestDTO();
-        req.setRefreshToken("old-refresh");
+        RefreshRequestDTO req = new RefreshRequestDTO("old-refresh");
         
         RefreshToken oldRt = new RefreshToken();
         oldRt.setUser(validUser);
@@ -214,7 +211,7 @@ class AuthControllerTest {
     @DisplayName("Update Profile deve retornar dados atualizados do usuário")
     void testUpdateProfile() {
         CustomUserDetails userDetails = new CustomUserDetails(validUser);
-        UpdateProfileDTO req = new UpdateProfileDTO();
+        UpdateProfileDTO req = new UpdateProfileDTO("New Name", null, null);
         UserResponseDTO resp = new UserResponseDTO(validUser.getId(), "New Name", Role.GUIDE, null);
         
         when(userService.updateProfile(validUser.getId(), req)).thenReturn(resp);

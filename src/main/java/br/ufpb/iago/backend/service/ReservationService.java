@@ -28,7 +28,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -58,15 +57,15 @@ public class ReservationService {
         User tourist = userRepository.findById(touristId)
                 .orElseThrow(UserNotFoundException::new);
 
-        Attraction attraction = attractionRepository.findById(dto.getAttractionId())
+        Attraction attraction = attractionRepository.findById(dto.attractionId())
                 .orElseThrow(AttractionNotFoundException::new);
 
-        if (dto.getReservedFor().isBefore(LocalDateTime.now())) {
+        if (dto.reservedFor().isBefore(LocalDateTime.now())) {
             throw new ReservationDateInPastException();
         }
 
-        LocalDateTime startOfDay = dto.getReservedFor().toLocalDate().atStartOfDay();
-        LocalDateTime endOfDay = dto.getReservedFor().toLocalDate().atTime(LocalTime.MAX);
+        LocalDateTime startOfDay = dto.reservedFor().toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = dto.reservedFor().toLocalDate().atTime(LocalTime.MAX);
         long activeReservations = reservationRepository.countByAttractionIdAndStatusInAndReservedForBetween(
                 attraction.getId(),
                 List.of(Status.PENDING, Status.CONFIRMED),
@@ -89,7 +88,7 @@ public class ReservationService {
         Reservation reservation = new Reservation();
         reservation.setTourist(tourist);
         reservation.setAttraction(attraction);
-        reservation.setReservedFor(dto.getReservedFor());
+        reservation.setReservedFor(dto.reservedFor());
         reservation.setStatus(Status.PENDING);
 
         return reservationMapper.toResponseDTO(reservationRepository.save(reservation));

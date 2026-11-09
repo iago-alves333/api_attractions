@@ -10,7 +10,7 @@ public interface ReservationMapper {
 
     @Mapping(source = "tourist.id", target = "touristId")
     @Mapping(source = "tourist.name", target = "touristName")
-    @Mapping(source = "attraction.id", target = "attractionID")
+    @Mapping(source = "attraction.id", target = "attractionId")
     @Mapping(source = "attraction.title", target = "attractionTitle")
     ReservationResponseDTO toResponseDTO(Reservation reservation);
 }

@@ -55,7 +55,7 @@ class ReviewControllerTest {
     @Test
     @DisplayName("Create deve retornar 201")
     void testCreate() {
-        ReviewRequestDTO req = new ReviewRequestDTO();
+        ReviewRequestDTO req = new ReviewRequestDTO(attrId, 5, "Comment");
         when(reviewService.create(req, currentUser.getId())).thenReturn(responseDTO);
 
         ResponseEntity<ReviewResponseDTO> response = reviewController.create(req, currentUser);
@@ -103,7 +103,7 @@ class ReviewControllerTest {
     @Test
     @DisplayName("Update deve retornar review atualizado")
     void testUpdate() {
-        ReviewRequestDTO req = new ReviewRequestDTO();
+        ReviewRequestDTO req = new ReviewRequestDTO(attrId, 4, "Updated");
         when(reviewService.update(revId, req, currentUser.getId())).thenReturn(responseDTO);
 
         ResponseEntity<ReviewResponseDTO> response = reviewController.update(revId, req, currentUser);

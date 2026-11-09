@@ -20,9 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,7 +54,7 @@ public class ReviewService {
         User tourist = userRepository.findById(touristId)
                 .orElseThrow(UserNotFoundException::new);
 
-        Attraction attraction = attractionRepository.findById(dto.getAttractionId())
+        Attraction attraction = attractionRepository.findById(dto.attractionId())
                 .orElseThrow(AttractionNotFoundException::new);
 
         if (reviewRepository.existsByTouristAndAttraction(tourist, attraction)) {
@@ -72,8 +70,8 @@ public class ReviewService {
         Review review = new Review();
         review.setTourist(tourist);
         review.setAttraction(attraction);
-        review.setRating(dto.getRating());
-        review.setComment(dto.getComment());
+        review.setRating(dto.rating());
+        review.setComment(dto.comment());
 
         review = reviewRepository.save(review);
 
@@ -116,8 +114,8 @@ public class ReviewService {
             throw new AccessDeniedException("Você não tem permissão para editar este review");
         }
 
-        review.setRating(dto.getRating());
-        review.setComment(dto.getComment());
+        review.setRating(dto.rating());
+        review.setComment(dto.comment());
 
         review = reviewRepository.save(review);
 
