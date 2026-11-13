@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 @Service
@@ -61,8 +62,16 @@ public class AttractionService {
     @Cacheable(value = "attractions", key = "'page_' + #pageable")
     @Transactional(readOnly = true)
     public PageDTO<AttractionResponseDTO> findAll(Pageable pageable) {
-        return new PageDTO<>(attractionRepository.findAll(pageable)
-                .map(attractionMapper::toResponseDTO));
+        return findAll(null, pageable);
+    }
+
+    @Cacheable(value = "attractions", key = "'page_' + #guideId + '_' + #pageable")
+    @Transactional(readOnly = true)
+    public PageDTO<AttractionResponseDTO> findAll(UUID guideId, Pageable pageable) {
+        Page<Attraction> page = (guideId != null)
+                ? attractionRepository.findAllByGuideId(guideId, pageable)
+                : attractionRepository.findAll(pageable);
+        return new PageDTO<>(page.map(attractionMapper::toResponseDTO));
     }
 
     @Cacheable(value = "attractions", key = "#id")
@@ -120,15 +129,22 @@ public class AttractionService {
         return new PageDTO<>(attractionRepository.findByTitleContainingIgnoreCase(title, pageable)
                 .map(attractionMapper::toResponseDTO));
     }
-    public PageDTO<AttractionResponseDTO> getNearbyAttractions(double lat,double lon, double radiusKm, Pageable pageable){
+    public PageDTO<AttractionResponseDTO> getNearbyAttractions(double lat, double lon, double radiusKm, Pageable pageable) {
         double radiusInMeters = (radiusKm > 0 ? radiusKm : 50.0) * 1000;
-        Page<Attraction> attractions = attractionRepository.findNearby(lat, lon, radiusInMeters, pageable);
+        Page<Attraction> attractions = attractionRepository.findNearby(lat, lon, radiusInMeters, withoutSort(pageable));
         return new PageDTO<>(attractions.map(attractionMapper::toResponseDTO));
     }
+
     public PageDTO<AttractionResponseDTO> searchAttractions(String keyword, double lat, double lon, double radiusKm, Pageable pageable) {
         double radiusInMeters = (radiusKm > 0 ? radiusKm : 50.0) * 1000;
-        Page<Attraction> attractions = attractionRepository.searchByKeywordAndLocation(keyword, lat, lon, radiusInMeters, pageable);
+        Page<Attraction> attractions = attractionRepository.searchByKeywordAndLocation(keyword, lat, lon, radiusInMeters, withoutSort(pageable));
         return new PageDTO<>(attractions.map(attractionMapper::toResponseDTO));
+    }
+
+    private static Pageable withoutSort(Pageable pageable) {
+        return pageable.isPaged()
+                ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize())
+                : Pageable.unpaged();
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────

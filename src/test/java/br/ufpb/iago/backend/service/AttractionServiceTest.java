@@ -294,6 +294,37 @@ class AttractionServiceTest {
             assertEquals(1, result.totalElements());
             verify(attractionRepository).searchByKeywordAndLocation(eq("Praia"), eq(-7.1), eq(-34.8), eq(radiusMeters), any(Pageable.class));
         }
+
+        @Test
+        @DisplayName("findAll(guideId, pageable) deve filtrar por guia quando guideId é informado")
+        void findAll_comGuideId_chamaFindAllByGuideId() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Attraction> page = new PageImpl<>(List.of(attraction));
+            when(attractionRepository.findAllByGuideId(guide.getId(), pageable)).thenReturn(page);
+
+            PageDTO<AttractionResponseDTO> result = attractionService.findAll(guide.getId(), pageable);
+
+            assertEquals(1, result.totalElements());
+            verify(attractionRepository).findAllByGuideId(guide.getId(), pageable);
+            verify(attractionRepository, never()).findAll(any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("getNearbyAttractions() e searchAttractions() devem remover Sort arbitrário antes da query nativa")
+        void spatialQueries_removemSortDoPageable() {
+            Pageable sorted = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("ratingAverage").descending());
+            Pageable expectedUnsorted = PageRequest.of(0, 10);
+            Page<Attraction> page = new PageImpl<>(List.of(attraction));
+
+            when(attractionRepository.findNearby(eq(-7.1), eq(-34.8), eq(10000.0), eq(expectedUnsorted))).thenReturn(page);
+            when(attractionRepository.searchByKeywordAndLocation(eq("Praia"), eq(-7.1), eq(-34.8), eq(10000.0), eq(expectedUnsorted))).thenReturn(page);
+
+            attractionService.getNearbyAttractions(-7.1, -34.8, 10.0, sorted);
+            attractionService.searchAttractions("Praia", -7.1, -34.8, 10.0, sorted);
+
+            verify(attractionRepository).findNearby(-7.1, -34.8, 10000.0, expectedUnsorted);
+            verify(attractionRepository).searchByKeywordAndLocation("Praia", -7.1, -34.8, 10000.0, expectedUnsorted);
+        }
     }
 
 }

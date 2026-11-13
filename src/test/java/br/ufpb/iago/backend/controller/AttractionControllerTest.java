@@ -89,12 +89,28 @@ class AttractionControllerTest {
     void testFindAll() {
         Pageable pageable = Pageable.unpaged();
         PageDTO<AttractionResponseDTO> page = new PageDTO<>(new PageImpl<>(List.of(responseDTO)));
-        when(attractionService.findAll(pageable)).thenReturn(page);
+        when(attractionService.findAll(null, pageable)).thenReturn(page);
 
-        ResponseEntity<PageDTO<AttractionResponseDTO>> response = attractionController.findAll(pageable);
+        ResponseEntity<PageDTO<AttractionResponseDTO>> response = attractionController.findAll(null, pageable);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
+        verify(attractionService).findAll(null, pageable);
+    }
+
+    @Test
+    @DisplayName("Find All com guideId deve delegar filtro para o service")
+    void testFindAll_WithGuideId() {
+        UUID guideId = UUID.randomUUID();
+        Pageable pageable = Pageable.unpaged();
+        PageDTO<AttractionResponseDTO> page = new PageDTO<>(new PageImpl<>(List.of(responseDTO)));
+        when(attractionService.findAll(guideId, pageable)).thenReturn(page);
+
+        ResponseEntity<PageDTO<AttractionResponseDTO>> response = attractionController.findAll(guideId, pageable);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        verify(attractionService).findAll(guideId, pageable);
     }
 
     @Test

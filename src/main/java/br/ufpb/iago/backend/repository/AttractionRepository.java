@@ -20,6 +20,9 @@ public interface AttractionRepository extends JpaRepository<Attraction, UUID> {
     @EntityGraph(attributePaths = {"guide"})
     Page<Attraction> findAll(Pageable pageable);
 
+    @EntityGraph(attributePaths = {"guide"})
+    Page<Attraction> findAllByGuideId(UUID guideId, Pageable pageable);
+
     @Override
     @EntityGraph(attributePaths = {"guide"})
     Optional<Attraction> findById(UUID id);

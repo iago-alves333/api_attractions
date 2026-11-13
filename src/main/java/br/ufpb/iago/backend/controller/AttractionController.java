@@ -60,8 +60,9 @@ public class AttractionController {
 
     @GetMapping
     public ResponseEntity<PageDTO<AttractionResponseDTO>> findAll(
+            @RequestParam(required = false) UUID guideId,
             @PageableDefault(size = 10, sort = "title") Pageable pageable) {
-        return ResponseEntity.ok(attractionService.findAll(pageable));
+        return ResponseEntity.ok(attractionService.findAll(guideId, pageable));
     }
 
     @GetMapping("/{id}")
