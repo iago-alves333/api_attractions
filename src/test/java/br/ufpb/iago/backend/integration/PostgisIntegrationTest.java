@@ -1,12 +1,14 @@
 package br.ufpb.iago.backend.integration;
 
 import br.ufpb.iago.backend.model.Attraction;
+import br.ufpb.iago.backend.model.RefreshToken;
 import br.ufpb.iago.backend.model.Reservation;
 import br.ufpb.iago.backend.model.Review;
 import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.model.Status;
 import br.ufpb.iago.backend.model.User;
 import br.ufpb.iago.backend.repository.AttractionRepository;
+import br.ufpb.iago.backend.repository.RefreshTokenRepository;
 import br.ufpb.iago.backend.repository.ReservationRepository;
 import br.ufpb.iago.backend.repository.ReviewRepository;
 import br.ufpb.iago.backend.repository.UserRepository;
@@ -78,6 +80,9 @@ class PostgisIntegrationTest {
     private ReviewRepository reviewRepository;
 
     @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
     private EntityManager entityManager;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
@@ -86,6 +91,7 @@ class PostgisIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        refreshTokenRepository.deleteAll();
         reviewRepository.deleteAll();
         reservationRepository.deleteAll();
         attractionRepository.deleteAll();
@@ -268,6 +274,12 @@ class PostgisIntegrationTest {
             review.setComment("Excelente!");
             reviewRepository.saveAndFlush(review);
 
+            RefreshToken refreshToken = new RefreshToken();
+            refreshToken.setToken("sha256-sample-hash");
+            refreshToken.setUser(testTourist);
+            refreshToken.setExpiresAt(LocalDateTime.now().plusDays(7));
+            refreshTokenRepository.saveAndFlush(refreshToken);
+
             entityManager.flush();
             entityManager.clear();
 
@@ -288,6 +300,83 @@ class PostgisIntegrationTest {
             ).getContent().get(0);
             assertThat(persistenceUtil.isLoaded(fetchedReview, "tourist")).isTrue();
             assertThat(fetchedReview.getTourist().getName()).isEqualTo("Turista Viajante");
+
+            RefreshToken fetchedToken = refreshTokenRepository.findByToken("sha256-sample-hash").orElseThrow();
+            assertThat(persistenceUtil.isLoaded(fetchedToken, "user")).isTrue();
+            assertThat(fetchedToken.getUser().getEmail()).isEqualTo("turista@titureco.com.br");
+        }
+    }
+
+    @Nested
+    @DisplayName("Guide Filter, Linked Records & Pessimistic Lock Tests")
+    class GuideFilterAndLockTests {
+
+        @Test
+        @DisplayName("findAllByGuideId retorna apenas atrações do guia informado com guide carregado")
+        void findAllByGuideIdFiltersAndLoadsGuide() {
+            User otherGuide = new User();
+            otherGuide.setName("Outro Guia");
+            otherGuide.setEmail("outroguia@titureco.com.br");
+            otherGuide.setPassword("$2a$10$hashedpasswordforexampleguide2");
+            otherGuide.setRole(Role.GUIDE);
+            otherGuide = userRepository.save(otherGuide);
+
+            createAttraction("Passeio Guia Principal", -7.1491, -34.7977, BigDecimal.TEN, 15);
+
+            Attraction otherAttraction = new Attraction();
+            otherAttraction.setTitle("Passeio Outro Guia");
+            otherAttraction.setDescription("Outro passeio");
+            otherAttraction.setGuide(otherGuide);
+            otherAttraction.setPrice(BigDecimal.TEN);
+            otherAttraction.setAvailableSpots(10);
+            otherAttraction.setRatingAverage(0.0);
+            otherAttraction.setReviewCount(0);
+            otherAttraction.setLocation(geometryFactory.createPoint(new Coordinate(-34.8, -7.15)));
+            attractionRepository.saveAndFlush(otherAttraction);
+
+            entityManager.clear();
+
+            Page<Attraction> filtered = attractionRepository.findAllByGuideId(testGuide.getId(), PageRequest.of(0, 10));
+            assertThat(filtered.getContent()).hasSize(1);
+            assertThat(filtered.getContent().get(0).getTitle()).isEqualTo("Passeio Guia Principal");
+            assertThat(Persistence.getPersistenceUtil().isLoaded(filtered.getContent().get(0), "guide")).isTrue();
+        }
+
+        @Test
+        @DisplayName("hasLinkedRecords detecta reservas ou avaliações vinculadas e findByIdWithLock bloqueia a linha")
+        void hasLinkedRecordsAndPessimisticLockWorkAgainstPostgres() {
+            Attraction semVinculos = createAttraction("Atração Livre", -7.1491, -34.7977, BigDecimal.TEN, 20);
+            Attraction comReserva = createAttraction("Atração Reservada", -7.1492, -34.7978, BigDecimal.TEN, 20);
+            Attraction comAvaliacao = createAttraction("Atração Avaliada", -7.1493, -34.7979, BigDecimal.TEN, 20);
+
+            Reservation reservation = new Reservation();
+            reservation.setTourist(testTourist);
+            reservation.setAttraction(comReserva);
+            reservation.setStatus(Status.PENDING);
+            reservation.setReservedFor(LocalDateTime.now().plusDays(2));
+            reservationRepository.saveAndFlush(reservation);
+
+            Review review = new Review();
+            review.setTourist(testTourist);
+            review.setAttraction(comAvaliacao);
+            review.setRating(5);
+            review.setComment("Ótima experiência");
+            reviewRepository.saveAndFlush(review);
+
+            entityManager.flush();
+
+            assertThat(attractionRepository.hasLinkedRecords(semVinculos.getId())).isFalse();
+            assertThat(attractionRepository.hasLinkedRecords(comReserva.getId())).isTrue();
+            assertThat(attractionRepository.hasLinkedRecords(comAvaliacao.getId())).isTrue();
+
+            Attraction locked = attractionRepository.findByIdWithLock(semVinculos.getId()).orElseThrow();
+            assertThat(locked.getId()).isEqualTo(semVinculos.getId());
+
+            Page<Attraction> search = attractionRepository.searchByKeywordAndLocation(
+                    "Livre", -7.1491, -34.7977, 5000.0, PageRequest.of(0, 10)
+            );
+            assertThat(search.getContent()).hasSize(1);
+            assertThat(search.getContent().get(0).getId()).isEqualTo(semVinculos.getId());
         }
     }
 }

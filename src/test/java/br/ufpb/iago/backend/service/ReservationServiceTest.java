@@ -183,6 +183,46 @@ class ReservationServiceTest {
             assertThrows(DuplicateReservationException.class, () -> reservationService.create(dto, tourist.getId()));
             verify(reservationRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("deve adquirir lock pessimista antes de contar vagas e nunca usar findById comum")
+        void create_adquireLockAntesDeContarVagas_eNuncaUsaFindByIdComum() {
+            LocalDateTime reservedFor = LocalDateTime.now().plusDays(3);
+            ReservationRequestDTO dto = createReservationRequestDTO(attraction.getId(), reservedFor);
+
+            when(userRepository.findById(tourist.getId())).thenReturn(Optional.of(tourist));
+            when(attractionRepository.findByIdWithLock(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(reservationRepository.countByAttractionIdAndStatusInAndReservedForBetween(any(), any(), any(), any()))
+                    .thenReturn(1L);
+            when(reservationRepository.existsByTouristAndAttractionAndStatus(tourist, attraction, Status.PENDING))
+                    .thenReturn(false);
+            when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
+                Reservation saved = invocation.getArgument(0);
+                saved.setId(UUID.randomUUID());
+                return saved;
+            });
+
+            reservationService.create(dto, tourist.getId());
+
+            var order = inOrder(attractionRepository, reservationRepository);
+            order.verify(attractionRepository).findByIdWithLock(attraction.getId());
+            order.verify(reservationRepository).countByAttractionIdAndStatusInAndReservedForBetween(any(), any(), any(), any());
+            order.verify(reservationRepository).save(any(Reservation.class));
+            verify(attractionRepository, never()).findById(any());
+        }
+
+        @Test
+        @DisplayName("deve lançar AttractionNotFoundException quando lock não encontra atração")
+        void create_atracaoNaoEncontradaComLock_lancaAttractionNotFound() {
+            ReservationRequestDTO dto = createReservationRequestDTO(attraction.getId(), LocalDateTime.now().plusDays(1));
+
+            when(userRepository.findById(tourist.getId())).thenReturn(Optional.of(tourist));
+            when(attractionRepository.findByIdWithLock(attraction.getId())).thenReturn(Optional.empty());
+
+            assertThrows(AttractionNotFoundException.class, () -> reservationService.create(dto, tourist.getId()));
+            verify(reservationRepository, never()).countByAttractionIdAndStatusInAndReservedForBetween(any(), any(), any(), any());
+            verify(reservationRepository, never()).save(any());
+        }
     }
 
     @Nested
