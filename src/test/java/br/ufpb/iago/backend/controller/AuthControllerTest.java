@@ -138,7 +138,7 @@ class AuthControllerTest {
     @DisplayName("Register com dados válidos deve retornar 201 e dados do usuário")
     void testRegister_ReturnsCreated() {
         UserRequestDTO req = new UserRequestDTO("Test", "test@gmail.com", "password123");
-        UserResponseDTO resp = new UserResponseDTO(UUID.randomUUID(), "Test", Role.TOURIST, null);
+        UserResponseDTO resp = new UserResponseDTO(UUID.randomUUID(), "Test", "test@gmail.com", Role.TOURIST, null);
         
         when(userService.saveUser(req)).thenReturn(resp);
         
@@ -213,7 +213,7 @@ class AuthControllerTest {
     @DisplayName("Get Me deve retornar dados do usuário atual")
     void testGetMe() {
         CustomUserDetails userDetails = new CustomUserDetails(validUser);
-        UserResponseDTO resp = new UserResponseDTO(validUser.getId(), "Test User", Role.GUIDE, null);
+        UserResponseDTO resp = new UserResponseDTO(validUser.getId(), "Test User", validUser.getEmail(), Role.GUIDE, null);
         
         when(userService.findById(validUser.getId())).thenReturn(resp);
         
@@ -228,7 +228,7 @@ class AuthControllerTest {
     void testUpdateProfile() {
         CustomUserDetails userDetails = new CustomUserDetails(validUser);
         UpdateProfileDTO req = new UpdateProfileDTO("New Name", null, null);
-        UserResponseDTO resp = new UserResponseDTO(validUser.getId(), "New Name", Role.GUIDE, null);
+        UserResponseDTO resp = new UserResponseDTO(validUser.getId(), "New Name", validUser.getEmail(), Role.GUIDE, null);
         
         when(userService.updateProfile(validUser.getId(), req)).thenReturn(resp);
         

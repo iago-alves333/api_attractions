@@ -146,4 +146,15 @@ class AttractionControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
+
+    @Test
+    @DisplayName("Deve falhar na validação quando título contém apenas espaços em branco")
+    void attractionRequestDTO_tituloEmBranco_falhaValidacao() {
+        var dto = new br.ufpb.iago.backend.dto.AttractionRequestDTO(
+                "   ", "Descrição válida", java.math.BigDecimal.TEN, 10, -7.1195, -34.8450);
+        try (var factory = jakarta.validation.Validation.buildDefaultValidatorFactory()) {
+            var violations = factory.getValidator().validate(dto);
+            assertThat(violations).anyMatch(v -> "title".equals(v.getPropertyPath().toString()));
+        }
+    }
 }

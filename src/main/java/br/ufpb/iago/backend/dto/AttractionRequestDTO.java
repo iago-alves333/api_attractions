@@ -2,6 +2,7 @@ package br.ufpb.iago.backend.dto;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -10,7 +11,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 public record AttractionRequestDTO(
-        @NotNull(message = "O título é obrigatório")
+        @NotBlank(message = "O título é obrigatório")
         @Size(max = 150, message = "O título não pode ter mais de 150 caracteres")
         String title,
 

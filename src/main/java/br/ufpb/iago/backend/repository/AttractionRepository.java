@@ -94,4 +94,12 @@ public interface AttractionRepository extends JpaRepository<Attraction, UUID> {
 
     @EntityGraph(attributePaths = {"guide"})
     Page<Attraction> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+
+    @Query("""
+            SELECT CASE WHEN (
+                EXISTS (SELECT 1 FROM Reservation r WHERE r.attraction.id = :attractionId) OR
+                EXISTS (SELECT 1 FROM Review rv WHERE rv.attraction.id = :attractionId)
+            ) THEN true ELSE false END
+            """)
+    boolean hasLinkedRecords(@Param("attractionId") UUID attractionId);
 }

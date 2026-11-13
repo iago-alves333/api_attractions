@@ -52,7 +52,8 @@ public class UserService {
      */
     @Transactional(readOnly = true)
     public User login(LoginRequestDTO dto) {
-        User user = userRepository.findByEmail(dto.email())
+        String email = normalizeEmail(dto.email());
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(InvalidCredentialsException::new);
 
         if (!passwordEncoder.matches(dto.password(), user.getPassword())) {
@@ -66,13 +67,14 @@ public class UserService {
 
     @Transactional
     public UserResponseDTO saveUser(UserRequestDTO dto) {
-        if (userRepository.findByEmail(dto.email()).isPresent()) {
+        String email = normalizeEmail(dto.email());
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new DuplicateEmailException();
         }
 
         User user = new User();
         user.setName(dto.name());
-        user.setEmail(dto.email());
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(dto.password()));
         user.setRole(Role.TOURIST);
 
@@ -110,11 +112,12 @@ public class UserService {
         }
 
         if (dto.email() != null && !dto.email().isBlank()) {
-            if (!dto.email().equals(user.getEmail()) &&
-                    userRepository.findByEmail(dto.email()).isPresent()) {
+            String email = normalizeEmail(dto.email());
+            if (!email.equals(user.getEmail()) &&
+                    userRepository.findByEmail(email).isPresent()) {
                 throw new DuplicateEmailException("Email já cadastrado por outro usuário");
             }
-            user.setEmail(dto.email());
+            user.setEmail(email);
         }
 
         if (dto.password() != null && !dto.password().isBlank()) {
@@ -161,6 +164,10 @@ public class UserService {
 
         refreshTokenRepository.deleteAllByUser(user);
         userRepository.delete(user);
+    }
+
+    private static String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
     }
 
 }

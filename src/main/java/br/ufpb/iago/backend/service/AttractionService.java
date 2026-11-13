@@ -6,6 +6,7 @@ import br.ufpb.iago.backend.dto.AttractionRequestDTO;
 import br.ufpb.iago.backend.dto.AttractionResponseDTO;
 import br.ufpb.iago.backend.dto.PageDTO;
 import br.ufpb.iago.backend.exception.AttractionNotFoundException;
+import br.ufpb.iago.backend.exception.BusinessException;
 import br.ufpb.iago.backend.exception.GuideNotFoundException;
 import br.ufpb.iago.backend.model.Attraction;
 import br.ufpb.iago.backend.model.User;
@@ -119,6 +120,10 @@ public class AttractionService {
 
         if (!isAdmin && (attraction.getGuide() == null || !attraction.getGuide().getId().equals(userId))) {
             throw new AccessDeniedException("Você não tem permissão para deletar esta atração");
+        }
+
+        if (attractionRepository.hasLinkedRecords(id)) {
+            throw new BusinessException("Não é possível excluir atração que possui reservas ou avaliações vinculadas");
         }
 
         attractionRepository.delete(attraction);

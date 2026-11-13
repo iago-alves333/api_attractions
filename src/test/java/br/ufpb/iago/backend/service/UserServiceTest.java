@@ -123,6 +123,20 @@ class UserServiceTest {
         }
 
         @Test
+        @DisplayName("Deve autenticar mesmo com espaços e maiúsculas no e-mail")
+        void login_emailComMaiusculasEEspacos_normaliza() {
+            LoginRequestDTO dto = createLoginDTO("  Turista@Test.COM ", "senha123");
+
+            when(userRepository.findByEmail("turista@test.com")).thenReturn(Optional.of(tourist));
+            when(passwordEncoder.matches("senha123", "encoded-password")).thenReturn(true);
+
+            User result = userService.login(dto);
+
+            assertEquals("turista@test.com", result.getEmail());
+            verify(userRepository).findByEmail("turista@test.com");
+        }
+
+        @Test
         @DisplayName("Deve lançar InvalidCredentialsException quando senha está errada")
         void login_senhaErrada_lancaInvalidCredentials() {
             LoginRequestDTO dto = createLoginDTO("turista@test.com", "senha-errada");
@@ -143,9 +157,9 @@ class UserServiceTest {
     class SaveUserTests {
 
         @Test
-        @DisplayName("Deve criar usuário com role TOURIST")
+        @DisplayName("Deve criar usuário com role TOURIST e e-mail normalizado")
         void saveUser_dadosValidos_criaComoTourist() {
-            UserRequestDTO dto = createRegisterDTO("Novo User", "novo@test.com", "senha123");
+            UserRequestDTO dto = createRegisterDTO("Novo User", "  Novo@Test.COM ", "senha123");
 
             when(userRepository.findByEmail("novo@test.com")).thenReturn(Optional.empty());
             when(passwordEncoder.encode("senha123")).thenReturn("encoded-senha123");
@@ -159,12 +173,14 @@ class UserServiceTest {
 
             assertNotNull(result);
             assertEquals("Novo User", result.name());
+            assertEquals("novo@test.com", result.email());
             assertEquals(Role.TOURIST, result.role());
 
-            // Verifica que a senha foi codificada e o role é TOURIST
+            // Verifica que a senha foi codificada, e-mail foi normalizado e o role é TOURIST
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
             verify(userRepository).save(captor.capture());
             User savedUser = captor.getValue();
+            assertEquals("novo@test.com", savedUser.getEmail());
             assertEquals("encoded-senha123", savedUser.getPassword());
             assertEquals(Role.TOURIST, savedUser.getRole());
         }
@@ -282,6 +298,22 @@ class UserServiceTest {
             userService.updateProfile(id, dto);
 
             assertEquals("novoemail@test.com", tourist.getEmail());
+        }
+
+        @Test
+        @DisplayName("Deve normalizar email com espaços e maiúsculas ao atualizar perfil")
+        void updateProfile_emailComEspacosEMaiusculas_normaliza() {
+            UUID id = tourist.getId();
+            UpdateProfileDTO dto = new UpdateProfileDTO(null, "  NovoEmail@Test.COM ", null);
+
+            when(userRepository.findById(id)).thenReturn(Optional.of(tourist));
+            when(userRepository.findByEmail("novoemail@test.com")).thenReturn(Optional.empty());
+            when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+            var result = userService.updateProfile(id, dto);
+
+            assertEquals("novoemail@test.com", tourist.getEmail());
+            assertEquals("novoemail@test.com", result.email());
         }
 
         @Test

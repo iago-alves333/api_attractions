@@ -218,9 +218,23 @@ class AttractionServiceTest {
             UUID guideId = guide.getId();
 
             when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(attractionRepository.hasLinkedRecords(attraction.getId())).thenReturn(false);
 
             assertDoesNotThrow(() -> attractionService.delete(attraction.getId(), guideId));
             verify(attractionRepository).delete(attraction);
+        }
+
+        @Test
+        @DisplayName("Deve lançar BusinessException se a atração possuir reservas ou avaliações vinculadas")
+        void delete_comRegistrosVinculados_lancaExcecao() {
+            UUID guideId = guide.getId();
+
+            when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(attractionRepository.hasLinkedRecords(attraction.getId())).thenReturn(true);
+
+            assertThrows(br.ufpb.iago.backend.exception.BusinessException.class,
+                    () -> attractionService.delete(attraction.getId(), guideId));
+            verify(attractionRepository, never()).delete(any());
         }
 
         @Test

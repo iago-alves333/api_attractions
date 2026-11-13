@@ -119,7 +119,7 @@ class UserControllerIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/users deve retornar PageDTO para ADMIN e 403 para TOURIST")
     void findAllUsersEnforcesAdminRoleAndReturnsPageDto() throws Exception {
-        UserResponseDTO dto = new UserResponseDTO(tourist.getId(), "Turista", Role.TOURIST, java.time.LocalDateTime.now());
+        UserResponseDTO dto = new UserResponseDTO(tourist.getId(), "Turista", tourist.getEmail(), Role.TOURIST, java.time.LocalDateTime.now());
 
         when(userService.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(dto)));
 
@@ -127,6 +127,7 @@ class UserControllerIntegrationTest {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].name").value("Turista"))
+                .andExpect(jsonPath("$.content[0].email").value("tourist@titureco.com"))
                 .andExpect(jsonPath("$.last").value(true));
 
         mockMvc.perform(get("/api/v1/users")
@@ -137,7 +138,7 @@ class UserControllerIntegrationTest {
     @Test
     @DisplayName("PATCH /api/v1/users/{id}/promote-guide deve promover turista quando chamado por ADMIN")
     void promoteToGuideAsAdminReturns200() throws Exception {
-        UserResponseDTO promoted = new UserResponseDTO(tourist.getId(), tourist.getEmail(), Role.GUIDE, java.time.LocalDateTime.now());
+        UserResponseDTO promoted = new UserResponseDTO(tourist.getId(), "Turista", tourist.getEmail(), Role.GUIDE, java.time.LocalDateTime.now());
 
         when(userService.promoteToGuide(tourist.getId())).thenReturn(promoted);
 

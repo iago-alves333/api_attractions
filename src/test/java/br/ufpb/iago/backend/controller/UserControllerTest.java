@@ -38,7 +38,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
-        userResponse = new UserResponseDTO(userId, "Admin", Role.ADMIN, null);
+        userResponse = new UserResponseDTO(userId, "Admin", "admin@test.com", Role.ADMIN, null);
     }
 
     @Test
