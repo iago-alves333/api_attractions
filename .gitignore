@@ -43,3 +43,4 @@ build/
 .env
 .junie/
 postman/environments/
+IMPLEMENTATION_PLAN.md

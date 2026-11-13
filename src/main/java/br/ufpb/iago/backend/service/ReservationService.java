@@ -57,7 +57,7 @@ public class ReservationService {
         User tourist = userRepository.findById(touristId)
                 .orElseThrow(UserNotFoundException::new);
 
-        Attraction attraction = attractionRepository.findById(dto.attractionId())
+        Attraction attraction = attractionRepository.findByIdWithLock(dto.attractionId())
                 .orElseThrow(AttractionNotFoundException::new);
 
         if (dto.reservedFor().isBefore(LocalDateTime.now())) {

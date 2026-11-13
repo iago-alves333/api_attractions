@@ -16,6 +16,8 @@ import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +31,8 @@ import java.util.function.Supplier;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final UserService userService;
     private final JwtService jwtService;
@@ -75,8 +79,13 @@ public class AuthController {
                 .addLimit(Bandwidth.builder().capacity(5).refillGreedy(5, Duration.ofMinutes(1)).build())
                 .build();
 
-        ConsumptionProbe probe = proxyManager.builder().build(rateLimitKey, configSupplier).tryConsumeAndReturnRemaining(1);
-        if (!probe.isConsumed()) {
+        ConsumptionProbe probe = null;
+        try {
+            probe = proxyManager.builder().build(rateLimitKey, configSupplier).tryConsumeAndReturnRemaining(1);
+        } catch (Exception ex) {
+            log.warn("Redis indisponível no rate limit de login (fail-open): {}", ex.getMessage());
+        }
+        if (probe != null && !probe.isConsumed()) {
             throw new TooManyRequestsException("Muitas tentativas de login. Tente novamente em instantes.");
         }
 
@@ -96,19 +105,13 @@ public class AuthController {
 
     /**
      * POST /api/v1/auth/refresh
-     * Valida o Refresh Token e emite um novo Access Token + novo Refresh Token (rotação).
+     * Valida o Refresh Token e emite um novo Access Token + novo Refresh Token (rotação atômica).
      */
     @PostMapping("/refresh")
     public ResponseEntity<RefreshResponseDTO> refresh(@Valid @RequestBody RefreshRequestDTO dto) {
-        // Valida o refresh token existente
-        RefreshToken oldRefreshToken = refreshTokenService.validateRefreshToken(dto.refreshToken());
-        User user = oldRefreshToken.getUser();
+        RefreshToken newRefreshToken = refreshTokenService.rotateRefreshToken(dto.refreshToken());
+        User user = newRefreshToken.getUser();
 
-        // Rotação: remove o token antigo e cria um novo
-        refreshTokenService.deleteByToken(oldRefreshToken);
-        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user);
-
-        // Gera novo access token
         String newAccessToken = jwtService.generateToken(user.getId(), user.getRole());
 
         return ResponseEntity.ok(new RefreshResponseDTO(newAccessToken, newRefreshToken.getRawToken()));

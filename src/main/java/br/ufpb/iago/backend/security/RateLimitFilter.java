@@ -8,6 +8,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,8 @@ import java.util.function.Supplier;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
 
     private final ProxyManager<String> proxyManager;
 
@@ -50,7 +54,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         Supplier<BucketConfiguration> configSupplier = getConfigSupplier();
 
-        ConsumptionProbe probe = proxyManager.builder().build(key, configSupplier).tryConsumeAndReturnRemaining(1);
+        ConsumptionProbe probe = null;
+        try {
+            probe = proxyManager.builder().build(key, configSupplier).tryConsumeAndReturnRemaining(1);
+        } catch (Exception ex) {
+            // ponytail: fail-open when Redis is unavailable so auxiliary rate-limiting never takes the API down
+            log.warn("Redis indisponível no RateLimitFilter (fail-open): {}", ex.getMessage());
+        }
+
+        if (probe == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (probe.isConsumed()) {
             response.addHeader("X-Rate-Limit-Remaining", String.valueOf(probe.getRemainingTokens()));
@@ -59,8 +74,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
             long waitForRefill = probe.getNanosToWaitForRefill() / 1_000_000_000;
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.addHeader("X-Rate-Limit-Retry-After-Seconds", String.valueOf(waitForRefill));
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"Too many requests\", \"retry_after_seconds\": " + waitForRefill + "}");
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write(
+                    "{\"status\": 429, \"message\": \"Muitas requisições. Tente novamente em " + waitForRefill
+                            + " segundos.\", \"retry_after_seconds\": " + waitForRefill + "}"
+            );
         }
     }
 

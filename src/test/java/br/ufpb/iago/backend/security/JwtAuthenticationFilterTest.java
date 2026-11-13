@@ -99,4 +99,28 @@ class JwtAuthenticationFilterTest {
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
         assertThat(SecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo("tourist@test.com");
     }
+
+    @Test
+    @DisplayName("Falha no Redis ao verificar blacklist deve degradar em fail-open e autenticar token válido")
+    void doFilterInternal_whenRedisThrows_shouldFailOpenAndAuthenticate() throws Exception {
+        String token = "valid-token";
+        UUID userId = UUID.randomUUID();
+        User user = new User();
+        user.setId(userId);
+        user.setEmail("tourist@test.com");
+        user.setPassword("secret");
+        user.setRole(Role.TOURIST);
+
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+        when(stringRedisTemplate.hasKey("jwt:bl:" + HashUtils.sha256(token)))
+                .thenThrow(new RuntimeException("Redis timeout"));
+        when(jwtService.isTokenValid(token)).thenReturn(true);
+        when(jwtService.extractUserIdFromToken(token)).thenReturn(userId);
+        when(customUserDetailsService.loadUserById(userId)).thenReturn(new CustomUserDetails(user));
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+    }
 }

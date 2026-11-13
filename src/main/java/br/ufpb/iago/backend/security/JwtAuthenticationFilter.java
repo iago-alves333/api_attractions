@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +19,8 @@ import java.util.UUID;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
     private final CustomUserDetailsService customUserDetailsService;
@@ -45,7 +49,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String token = authHeader.substring(7);
 
         // Verifica se o token está na blacklist (logout) via Redis
-        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey("jwt:bl:" + HashUtils.sha256(token)))) {
+        boolean blacklisted = false;
+        try {
+            blacklisted = Boolean.TRUE.equals(stringRedisTemplate.hasKey("jwt:bl:" + HashUtils.sha256(token)));
+        } catch (Exception ex) {
+            log.warn("Redis indisponível ao verificar blacklist JWT (fail-open): {}", ex.getMessage());
+        }
+
+        if (blacklisted) {
             chain.doFilter(request, response);
             return;
         }

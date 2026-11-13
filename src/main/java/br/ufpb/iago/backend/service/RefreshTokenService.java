@@ -58,6 +58,19 @@ public class RefreshTokenService {
     }
 
     /**
+     * Valida e rotaciona o refresh token atomicamente em uma única transação:
+     * se a criação do novo token falhar, a remoção do anterior sofre rollback.
+     */
+    @Transactional
+    public RefreshToken rotateRefreshToken(String rawToken) {
+        RefreshToken existing = validateRefreshToken(rawToken);
+        User user = existing.getUser();
+        refreshTokenRepository.delete(existing);
+        refreshTokenRepository.flush();
+        return createRefreshToken(user);
+    }
+
+    /**
      * Remove um refresh token específico do banco (rotação).
      */
     @Transactional

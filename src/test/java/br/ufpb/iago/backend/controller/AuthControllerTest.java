@@ -149,19 +149,35 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("Login deve funcionar normalmente (fail-open) mesmo se o Redis falhar no rate limit")
+    void testLogin_RedisUnavailable_FailOpen() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(proxyManager.builder()).thenThrow(new RuntimeException("Redis down"));
+
+        when(userService.login(any())).thenReturn(validUser);
+        when(jwtService.generateToken(validUser.getId(), validUser.getRole())).thenReturn("mocked-jwt-token");
+        RefreshToken rt = new RefreshToken();
+        rt.setRawToken("mocked-refresh-token");
+        when(refreshTokenService.createRefreshToken(validUser)).thenReturn(rt);
+
+        ResponseEntity<LoginResponseDTO> response = authController.login(loginRequest, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().accessToken()).isEqualTo("mocked-jwt-token");
+    }
+
+    @Test
     @DisplayName("Refresh deve retornar novo token e novo refresh token")
     void testRefresh_ReturnsOk() {
         RefreshRequestDTO req = new RefreshRequestDTO("old-refresh");
-        
-        RefreshToken oldRt = new RefreshToken();
-        oldRt.setUser(validUser);
-        oldRt.setToken("old-refresh");
-        
+
         RefreshToken newRt = new RefreshToken();
+        newRt.setUser(validUser);
         newRt.setRawToken("new-refresh");
 
-        when(refreshTokenService.validateRefreshToken("old-refresh")).thenReturn(oldRt);
-        when(refreshTokenService.createRefreshToken(validUser)).thenReturn(newRt);
+        when(refreshTokenService.rotateRefreshToken("old-refresh")).thenReturn(newRt);
         when(jwtService.generateToken(validUser.getId(), validUser.getRole())).thenReturn("new-access");
 
         ResponseEntity<RefreshResponseDTO> response = authController.refresh(req);
@@ -170,8 +186,8 @@ class AuthControllerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().accessToken()).isEqualTo("new-access");
         assertThat(response.getBody().refreshToken()).isEqualTo("new-refresh");
-        
-        verify(refreshTokenService).deleteByToken(oldRt);
+
+        verify(refreshTokenService).rotateRefreshToken("old-refresh");
     }
 
     @Test

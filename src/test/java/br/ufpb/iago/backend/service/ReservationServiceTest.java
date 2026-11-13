@@ -113,7 +113,7 @@ class ReservationServiceTest {
             ReservationRequestDTO dto = createReservationRequestDTO(attraction.getId(), reservedFor);
 
             when(userRepository.findById(touristId)).thenReturn(Optional.of(tourist));
-            when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(attractionRepository.findByIdWithLock(attraction.getId())).thenReturn(Optional.of(attraction));
             when(reservationRepository.countByAttractionIdAndStatusInAndReservedForBetween(any(), any(), any(), any())).thenReturn(0L);
             when(reservationRepository.existsByTouristAndAttractionAndStatus(tourist, attraction, Status.PENDING)).thenReturn(false);
             when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
@@ -129,6 +129,7 @@ class ReservationServiceTest {
             assertEquals(attraction.getId(), result.attractionId());
             assertEquals(Status.PENDING, result.status());
             assertEquals(reservedFor, result.reservedFor());
+            verify(attractionRepository).findByIdWithLock(attraction.getId());
             verify(reservationRepository).save(any(Reservation.class));
             verify(attractionRepository, never()).save(any());
         }
@@ -139,7 +140,7 @@ class ReservationServiceTest {
             ReservationRequestDTO dto = createReservationRequestDTO(attraction.getId(), LocalDateTime.now().minusDays(1));
 
             when(userRepository.findById(tourist.getId())).thenReturn(Optional.of(tourist));
-            when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(attractionRepository.findByIdWithLock(attraction.getId())).thenReturn(Optional.of(attraction));
 
             assertThrows(ReservationDateInPastException.class, () -> reservationService.create(dto, tourist.getId()));
             verify(reservationRepository, never()).save(any());
@@ -152,7 +153,7 @@ class ReservationServiceTest {
             attraction.setAvailableSpots(2);
 
             when(userRepository.findById(tourist.getId())).thenReturn(Optional.of(tourist));
-            when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(attractionRepository.findByIdWithLock(attraction.getId())).thenReturn(Optional.of(attraction));
             when(reservationRepository.countByAttractionIdAndStatusInAndReservedForBetween(any(), any(), any(), any())).thenReturn(2L);
 
             assertThrows(NoAvailableSpotsException.class, () -> reservationService.create(dto, tourist.getId()));
@@ -165,7 +166,7 @@ class ReservationServiceTest {
             ReservationRequestDTO dto = createReservationRequestDTO(attraction.getId(), LocalDateTime.now().plusDays(1));
 
             when(userRepository.findById(guide.getId())).thenReturn(Optional.of(guide));
-            when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(attractionRepository.findByIdWithLock(attraction.getId())).thenReturn(Optional.of(attraction));
 
             assertThrows(SelfReservationException.class, () -> reservationService.create(dto, guide.getId()));
         }
@@ -176,7 +177,7 @@ class ReservationServiceTest {
             ReservationRequestDTO dto = createReservationRequestDTO(attraction.getId(), LocalDateTime.now().plusDays(1));
 
             when(userRepository.findById(tourist.getId())).thenReturn(Optional.of(tourist));
-            when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(attractionRepository.findByIdWithLock(attraction.getId())).thenReturn(Optional.of(attraction));
             when(reservationRepository.existsByTouristAndAttractionAndStatus(tourist, attraction, Status.PENDING)).thenReturn(true);
 
             assertThrows(DuplicateReservationException.class, () -> reservationService.create(dto, tourist.getId()));
@@ -377,7 +378,7 @@ class ReservationServiceTest {
             attraction.setAvailableSpots(2);
 
             when(userRepository.findById(tourist.getId())).thenReturn(Optional.of(tourist));
-            when(attractionRepository.findById(attraction.getId())).thenReturn(Optional.of(attraction));
+            when(attractionRepository.findByIdWithLock(attraction.getId())).thenReturn(Optional.of(attraction));
 
             // No dia lotado, count == 2 (lotado)
             when(reservationRepository.countByAttractionIdAndStatusInAndReservedForBetween(

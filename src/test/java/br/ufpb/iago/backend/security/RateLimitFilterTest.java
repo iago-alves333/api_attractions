@@ -104,7 +104,22 @@ class RateLimitFilterTest {
         
         verify(response).setStatus(429);
         verify(response).addHeader("X-Rate-Limit-Retry-After-Seconds", "5");
-        verify(response).setContentType("application/json");
+        verify(response).setContentType("application/json;charset=UTF-8");
+        org.assertj.core.api.Assertions.assertThat(stringWriter.toString())
+                .contains("\"status\": 429")
+                .contains("\"message\": \"Muitas requisições. Tente novamente em 5 segundos.\"");
         verifyNoInteractions(filterChain);
+    }
+
+    @Test
+    void doFilterInternal_shouldFailOpen_whenRedisThrows() throws Exception {
+        when(request.getRequestURI()).thenReturn("/api/v1/attractions");
+        when(request.getRemoteAddr()).thenReturn("192.168.1.3");
+        when(proxyManager.builder()).thenThrow(new RuntimeException("Redis connection failed"));
+
+        rateLimitFilter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        verify(response, never()).setStatus(429);
     }
 }

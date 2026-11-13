@@ -155,6 +155,52 @@ class RefreshTokenServiceTest {
         verify(refreshTokenRepository).deleteByExpiresAtBefore(any(LocalDateTime.class));
     }
 
+    // ---------------------- rotateRefreshToken ----------------------
+
+    @Test
+    void rotateRefreshToken_tokenValido_deveRemoverAntigoECriarNovoNaMesmaTransacao() {
+        String rawToken = "token-valido";
+        String hashedToken = br.ufpb.iago.backend.security.HashUtils.sha256(rawToken);
+
+        RefreshToken existing = new RefreshToken();
+        existing.setToken(hashedToken);
+        existing.setUser(user);
+        existing.setExpiresAt(LocalDateTime.now().plusMinutes(10));
+
+        when(refreshTokenRepository.findByToken(hashedToken)).thenReturn(Optional.of(existing));
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        RefreshToken rotated = refreshTokenService.rotateRefreshToken(rawToken);
+
+        var inOrder = inOrder(refreshTokenRepository);
+        inOrder.verify(refreshTokenRepository).findByToken(hashedToken);
+        inOrder.verify(refreshTokenRepository).delete(existing);
+        inOrder.verify(refreshTokenRepository).flush();
+        inOrder.verify(refreshTokenRepository).save(any(RefreshToken.class));
+
+        assertThat(rotated.getUser()).isEqualTo(user);
+        assertThat(rotated.getRawToken()).isNotBlank().isNotEqualTo(rawToken);
+    }
+
+    @Test
+    void rotateRefreshToken_tokenExpirado_naoDeveRemoverNemCriarNovo() {
+        String rawToken = "token-expirado";
+        String hashedToken = br.ufpb.iago.backend.security.HashUtils.sha256(rawToken);
+
+        RefreshToken expired = new RefreshToken();
+        expired.setToken(hashedToken);
+        expired.setUser(user);
+        expired.setExpiresAt(LocalDateTime.now().minusMinutes(1));
+
+        when(refreshTokenRepository.findByToken(hashedToken)).thenReturn(Optional.of(expired));
+
+        assertThatThrownBy(() -> refreshTokenService.rotateRefreshToken(rawToken))
+                .isInstanceOf(ExpiredRefreshTokenException.class);
+
+        verify(refreshTokenRepository, never()).delete(any());
+        verify(refreshTokenRepository, never()).save(any());
+    }
+
     // ---------------------- deleteByToken ----------------------
 
     @Test

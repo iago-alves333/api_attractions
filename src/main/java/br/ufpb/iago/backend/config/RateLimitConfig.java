@@ -31,7 +31,8 @@ public class RateLimitConfig {
     public RedisClient redisClient() {
         RedisURI.Builder builder = RedisURI.builder()
                 .withHost(redisHost)
-                .withPort(redisPort);
+                .withPort(redisPort)
+                .withTimeout(Duration.ofSeconds(2));
 
         if (redisPassword != null && !redisPassword.isBlank()) {
             builder.withPassword(redisPassword.toCharArray());
