@@ -48,8 +48,8 @@ API REST para gerenciamento de atrações turísticas com busca geoespacial, res
 
 | Role | Pode |
 |---|---|
-| `TOURIST` | Fazer reservas, escrever/editar/excluir reviews, atualizar perfil |
-| `GUIDE` | Criar/editar/excluir atrações, confirmar/completar reservas |
+| `TOURIST` | Fazer reservas (com limite diário de vagas), escrever/editar/excluir reviews de passeios concluídos, atualizar perfil |
+| `GUIDE` | Criar/editar/excluir suas atrações (sem reservas/reviews vinculadas), confirmar/concluir reservas |
 | `ADMIN` | Gerenciar usuários, promover tourist → guide, tudo acima |
 
 ---
@@ -62,35 +62,35 @@ API REST para gerenciamento de atrações turísticas com busca geoespacial, res
 |---|---|---|---|
 | `POST` | `/register` | Público | Registro de novo usuário |
 | `POST` | `/login` | Público | Login (retorna access + refresh token) |
-| `POST` | `/refresh` | Público | Rotaciona tokens |
-| `POST` | `/logout` | Autenticado | Blacklist do token + revoga refresh tokens |
-| `GET` | `/me` | Autenticado | Dados do usuário logado |
+| `POST` | `/refresh` | Público | Rotaciona tokens atomicamente |
+| `POST` | `/logout` | Autenticado | Blacklist do access token + revoga refresh tokens |
+| `GET` | `/me` | Autenticado | Dados do usuário logado (`id`, `name`, `email`, `role`, `createdAt`) |
 | `PUT` | `/me` | Autenticado | Atualizar perfil (nome, email, senha) |
 
 ### Atrações (`/api/v1/attractions`)
 
 | Método | Rota | Acesso | Descrição |
 |---|---|---|---|
-| `GET` | `/` | Público | Listar atrações (paginado) |
+| `GET` | `/?guideId=` | Público | Listar atrações (paginado, filtro opcional por `guideId`) |
 | `GET` | `/{id}` | Público | Buscar por ID |
 | `GET` | `/nearby?lat=&lon=&radiusKm=` | Público | Busca geoespacial por raio |
 | `GET` | `/search?keyword=&lat=&lon=&radiusKm=` | Público | Busca textual + geoespacial |
 | `POST` | `/` | GUIDE, ADMIN | Criar atração |
 | `PUT` | `/{id}` | GUIDE, ADMIN | Editar atração |
-| `DELETE` | `/{id}` | GUIDE, ADMIN | Excluir atração |
+| `DELETE` | `/{id}` | GUIDE, ADMIN | Excluir atração (bloqueado se houver reservas ou reviews vinculadas) |
 
 ### Reservas (`/api/v1/reservations`)
 
 | Método | Rota | Acesso | Descrição |
 |---|---|---|---|
-| `POST` | `/` | TOURIST | Criar reserva |
-| `GET` | `/` | TOURIST | Listar minhas reservas |
-| `GET` | `/{id}` | TOURIST | Ver reserva específica |
-| `PATCH` | `/{id}/cancel` | TOURIST | Cancelar reserva |
-| `PATCH` | `/{id}/confirm` | GUIDE | Confirmar reserva |
-| `PATCH` | `/{id}/complete` | GUIDE | Marcar como concluída |
-| `GET` | `/guide` | GUIDE | Reservas das minhas atrações |
-| `GET` | `/guide/attractions/{id}` | GUIDE | Reservas de uma atração específica |
+| `POST` | `/` | TOURIST, ADMIN | Criar reserva (lock pessimista por atração + validação de vagas/dia) |
+| `GET` | `/` | TOURIST, ADMIN | Listar minhas reservas |
+| `GET` | `/{id}` | TOURIST, ADMIN | Ver reserva específica |
+| `PATCH` | `/{id}/cancel` | TOURIST, ADMIN | Cancelar reserva |
+| `PATCH` | `/{id}/confirm` | GUIDE, ADMIN | Confirmar reserva |
+| `PATCH` | `/{id}/complete` | GUIDE, ADMIN | Marcar como concluída |
+| `GET` | `/guide` | GUIDE, ADMIN | Reservas das atrações do guia |
+| `GET` | `/guide/attractions/{id}` | GUIDE, ADMIN | Reservas de uma atração específica |
 
 ### Reviews (`/api/v1/reviews`)
 
@@ -99,7 +99,7 @@ API REST para gerenciamento de atrações turísticas com busca geoespacial, res
 | `GET` | `/` | Público | Listar reviews |
 | `GET` | `/{id}` | Público | Ver review |
 | `GET` | `/attraction/{id}` | Público | Reviews de uma atração |
-| `POST` | `/` | TOURIST | Criar review |
+| `POST` | `/` | TOURIST | Criar review (requer reserva `COMPLETED` na atração) |
 | `PUT` | `/{id}` | TOURIST | Editar review (autor) |
 | `DELETE` | `/{id}` | TOURIST | Excluir review (autor) |
 
@@ -110,7 +110,7 @@ API REST para gerenciamento de atrações turísticas com busca geoespacial, res
 | `POST` | `/` | Criar usuário |
 | `GET` | `/` | Listar usuários (paginado) |
 | `GET` | `/{id}` | Buscar por ID |
-| `DELETE` | `/{id}` | Remover usuário |
+| `DELETE` | `/{id}` | Remover usuário (bloqueado se houver vínculos) |
 | `PATCH` | `/{id}/promote-guide` | Promover tourist → guide |
 
 ### Documentação interativa
@@ -159,13 +159,21 @@ docker compose up -d db redis prometheus grafana
 docker compose up -d
 ```
 
-**Localmente (dev):**
+**Localmente (dev com dados iniciais de exemplo):**
 ```bash
 mvn clean package -DskipTests
-java -jar target-maven/*.jar
+java -jar target-maven/*.jar --spring.profiles.active=dev
 ```
 
-### 4. Acessar os serviços
+### 4. Contas iniciais (Seed)
+
+- **AdminSeeder (qualquer profile):** se `ADMIN_SEED_PASSWORD` estiver definida, cria automaticamente o admin `admin@admin.com` no primeiro boot.
+- **Profile `dev` (`db/dev/V2__Insert_Initial_Data.sql`):** popula atrações em João Pessoa/PB e contas de teste com a senha `senha123`:
+  - **Admin:** `admin@titureco.com`
+  - **Guias:** `guia1@titureco.com`, `guia2@titureco.com`
+  - **Turistas:** `turista1@titureco.com`, `turista2@titureco.com`
+
+### 5. Acessar os serviços
 
 | Serviço | URL |
 |---|---|
@@ -194,7 +202,7 @@ Para configurar o Grafana:
 mvn clean test
 ```
 
-Os testes unitários rodam automaticamente no CI (GitHub Actions) em cada push/PR na branch `main`.
+A suíte conta com **155 testes automatizados** (unitários com JUnit 5/Mockito, testes de slice/segurança e testes de integração reais com **Testcontainers PostGIS + Flyway**), executados no CI (GitHub Actions) a cada push/PR na branch `main`.
 
 ---
 
@@ -206,13 +214,17 @@ Os testes unitários rodam automaticamente no CI (GitHub Actions) em cada push/P
 | `DB_PORT` | Porta do PostgreSQL | `5434` |
 | `DB_NAME` | Nome do banco | `titureco` |
 | `DB_USER` | Usuário do banco | `postgres` |
-| `DB_PASSWORD` | Senha do banco | — |
+| `DB_PASSWORD` | Senha do banco | `sua_senha_segura` |
 | `JWT_SECRET` | Chave secreta para assinar JWT (min 32 chars) | — |
 | `JWT_EXPIRATION` | Expiração do access token (ms) | `900000` (15min) |
 | `JWT_REFRESH_EXPIRATION` | Expiração do refresh token (ms) | `604800000` (7d) |
 | `REDIS_HOST` | Host do Redis | `localhost` |
 | `REDIS_PORT` | Porta do Redis | `6379` |
-| `ADMIN_SEED_PASSWORD` | Senha do admin criado no primeiro boot | — |
+| `REDIS_PASSWORD` | Senha do Redis (opcional) | vazio |
+| `CORS_ALLOWED_ORIGINS` | Origens permitidas no CORS (separadas por vírgula) | `http://localhost:5173,http://localhost:3000` |
+| `ADMIN_SEED_PASSWORD` | Senha do `admin@admin.com` criado no primeiro boot | vazio (desativado) |
+| `PGADMIN_EMAIL` | E-mail inicial do pgAdmin (Docker) | `admin@titureco.com` |
+| `PGADMIN_PASSWORD` | Senha inicial do pgAdmin (Docker) | `admin` |
 | `GF_ADMIN_PASSWORD` | Senha do admin do Grafana | `admin` |
 | `RATE_LIMIT_CAPACITY` | Limite de requests por bucket | `100` |
 | `RATE_LIMIT_REFILL_TOKENS` | Tokens recarregados por ciclo | `100` |
@@ -224,15 +236,15 @@ Os testes unitários rodam automaticamente no CI (GitHub Actions) em cada push/P
 
 ```
 src/main/java/br/ufpb/iago/backend/
-├── config/          # SecurityConfig, CORS, RateLimit, OpenAPI, AdminSeeder
+├── config/          # SecurityConfig, CorsConfig, RateLimitConfig, OpenApiConfig, AdminSeeder
 ├── controller/      # AuthController, AttractionController, ReservationController, ReviewController, UserController
-├── dto/             # Request e Response DTOs
-├── exception/       # Exceções de negócio + GlobalExceptionHandler
+├── dto/             # Request e Response DTOs (Java Records + Bean Validation)
+├── exception/       # Exceções de domínio + GlobalExceptionHandler
 ├── mapper/          # MapStruct mappers
 ├── model/           # Entidades JPA (User, Attraction, Reservation, Review, RefreshToken)
-├── repository/      # Spring Data JPA repositories
-├── security/        # JWT filter, service, UserDetails, RateLimitFilter
-└── service/         # Lógica de negócio
+├── repository/      # Spring Data JPA repositories (queries PostGIS, @EntityGraph, lock pessimista)
+├── security/        # JwtAuthenticationFilter, JwtService, CustomUserDetails, RateLimitFilter, HashUtils
+└── service/         # Regras de negócio e controle transacional
 ```
 
 ---
