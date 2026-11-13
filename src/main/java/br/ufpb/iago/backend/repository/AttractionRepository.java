@@ -2,6 +2,7 @@ package br.ufpb.iago.backend.repository;
 
 import br.ufpb.iago.backend.model.Attraction;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +15,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface AttractionRepository extends JpaRepository<Attraction, UUID> {
+
+    @Override
+    @EntityGraph(attributePaths = {"guide"})
+    Page<Attraction> findAll(Pageable pageable);
+
+    @Override
+    @EntityGraph(attributePaths = {"guide"})
+    Optional<Attraction> findById(UUID id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Attraction a WHERE a.id = :id")
@@ -79,6 +88,7 @@ public interface AttractionRepository extends JpaRepository<Attraction, UUID> {
             @Param("radiusInMeters") double radiusInMeters,
             Pageable pageable
     );
-    
+
+    @EntityGraph(attributePaths = {"guide"})
     Page<Attraction> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 }

@@ -2,12 +2,16 @@ package br.ufpb.iago.backend.integration;
 
 import br.ufpb.iago.backend.model.Attraction;
 import br.ufpb.iago.backend.model.Reservation;
+import br.ufpb.iago.backend.model.Review;
 import br.ufpb.iago.backend.model.Role;
 import br.ufpb.iago.backend.model.Status;
 import br.ufpb.iago.backend.model.User;
 import br.ufpb.iago.backend.repository.AttractionRepository;
 import br.ufpb.iago.backend.repository.ReservationRepository;
+import br.ufpb.iago.backend.repository.ReviewRepository;
 import br.ufpb.iago.backend.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Persistence;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -70,12 +74,19 @@ class PostgisIntegrationTest {
     @Autowired
     private ReservationRepository reservationRepository;
 
+    @Autowired
+    private ReviewRepository reviewRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
     private User testGuide;
     private User testTourist;
 
     @BeforeEach
     void setUp() {
+        reviewRepository.deleteAll();
         reservationRepository.deleteAll();
         attractionRepository.deleteAll();
         userRepository.deleteAll();
@@ -225,6 +236,58 @@ class PostgisIntegrationTest {
             Reservation saved = reservationRepository.saveAndFlush(newPending);
             assertThat(saved.getId()).isNotNull();
             assertThat(saved.getStatus()).isEqualTo(Status.PENDING);
+        }
+    }
+
+    @Nested
+    @DisplayName("EntityGraph Eager Loading Tests (Anti-N+1)")
+    class EntityGraphTests {
+
+        @Test
+        @DisplayName("Consultas paginadas carregam associações LAZY em uma query via @EntityGraph")
+        void entityGraphsLoadAssociationsEagerly() {
+            Attraction farol = createAttraction(
+                    "Farol do Cabo Branco",
+                    -7.1491,
+                    -34.7977,
+                    BigDecimal.TEN,
+                    20
+            );
+
+            Reservation reservation = new Reservation();
+            reservation.setTourist(testTourist);
+            reservation.setAttraction(farol);
+            reservation.setStatus(Status.COMPLETED);
+            reservation.setReservedFor(LocalDateTime.now().plusDays(1));
+            reservationRepository.saveAndFlush(reservation);
+
+            Review review = new Review();
+            review.setTourist(testTourist);
+            review.setAttraction(farol);
+            review.setRating(5);
+            review.setComment("Excelente!");
+            reviewRepository.saveAndFlush(review);
+
+            entityManager.flush();
+            entityManager.clear();
+
+            var persistenceUtil = Persistence.getPersistenceUtil();
+
+            Attraction fetchedAttraction = attractionRepository.findAll(PageRequest.of(0, 10)).getContent().get(0);
+            assertThat(persistenceUtil.isLoaded(fetchedAttraction, "guide")).isTrue();
+            assertThat(fetchedAttraction.getGuide().getName()).isEqualTo("Guia Paraibano");
+
+            Reservation fetchedReservation = reservationRepository.findAllByTouristId(
+                    testTourist.getId(), PageRequest.of(0, 10)
+            ).getContent().get(0);
+            assertThat(persistenceUtil.isLoaded(fetchedReservation, "tourist")).isTrue();
+            assertThat(persistenceUtil.isLoaded(fetchedReservation, "attraction")).isTrue();
+
+            Review fetchedReview = reviewRepository.findAllByAttractionId(
+                    farol.getId(), PageRequest.of(0, 10)
+            ).getContent().get(0);
+            assertThat(persistenceUtil.isLoaded(fetchedReview, "tourist")).isTrue();
+            assertThat(fetchedReview.getTourist().getName()).isEqualTo("Turista Viajante");
         }
     }
 }

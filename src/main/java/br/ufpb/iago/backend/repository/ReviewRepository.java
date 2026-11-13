@@ -5,14 +5,26 @@ import br.ufpb.iago.backend.model.Review;
 import br.ufpb.iago.backend.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
     boolean existsByTouristAndAttraction(User tourist, Attraction attraction);
+
+    @Override
+    @EntityGraph(attributePaths = {"tourist"})
+    Page<Review> findAll(Pageable pageable);
+
+    @Override
+    @EntityGraph(attributePaths = {"tourist", "attraction"})
+    Optional<Review> findById(UUID id);
+
+    @EntityGraph(attributePaths = {"tourist"})
     Page<Review> findAllByAttractionId(UUID attractionId, Pageable pageable);
 
     @Query("SELECT COALESCE(AVG(r.rating), 0) FROM Review r WHERE r.attraction.getId() = :attractionId")
