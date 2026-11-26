@@ -10,15 +10,16 @@ API REST para gerenciamento de atrações turísticas com busca geoespacial, res
 
 | Camada | Tecnologia |
 |---|---|
+| API Gateway | Go (`crypto-gateway` — Reverse Proxy, HMAC-SHA256, Rate Limit) |
 | Linguagem | Java 17 |
 | Framework | Spring Boot 3.3.2 |
 | Banco de dados | PostgreSQL 15 + PostGIS |
 | Cache | Redis |
-| Autenticação | JWT (Access + Refresh Token com rotação) |
+| Autenticação | JWT (Access + Refresh Token com rotação) + HMAC-SHA256 (Webhooks no Gateway) |
 | Migrations | Flyway |
 | Mapeamento | MapStruct |
-| Rate Limiting | Bucket4j (distribuído via Redis) |
-| Observabilidade | Spring Actuator + Prometheus + Grafana |
+| Rate Limiting | Redis Lua Script (Gateway) / Bucket4j (fallback standalone) |
+| Observabilidade | Spring Actuator + Prometheus + Grafana + `log/slog` |
 | Documentação | Swagger / OpenAPI 3 (SpringDoc) |
 | CI | GitHub Actions |
 | Containerização | Docker + Docker Compose |
@@ -28,19 +29,22 @@ API REST para gerenciamento de atrações turísticas com busca geoespacial, res
 ## Arquitetura
 
 ```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   Frontend   │────▶│   Backend    │────▶│ PostgreSQL   │
-│  (Titureco)  │     │ Spring Boot  │     │  + PostGIS   │
-└──────────────┘     └──────┬───────┘     └──────────────┘
-                           │
-                    ┌──────┴───────┐
-                    │    Redis     │
-                    │ (Cache + RL) │
-                    └──────────────┘
+┌──────────────┐     ┌──────────────────┐     ┌──────────────┐     ┌──────────────┐
+│   Frontend   │────▶│  Crypto-Gateway  │────▶│   Backend    │────▶│ PostgreSQL   │
+│  (Titureco)  │     │   Go (:8080)     │     │ Spring Boot  │     │  + PostGIS   │
+└──────────────┘     │  RL + HMAC M2M   │     │ (rede intern)│     └──────────────┘
+                     └────────┬─────────┘     └──────┬───────┘
+                              │                      │
+                              └──────────┬───────────┘
+                                         ▼
+                                  ┌──────────────┐
+                                  │    Redis     │
+                                  │ (Cache + RL) │
+                                  └──────────────┘
 
 ┌──────────────┐     ┌──────────────┐
 │  Prometheus  │────▶│   Grafana    │
-│  (métricas)  │     │ (dashboards) │
+│ (GW + Boot)  │     │ (dashboards) │
 └──────────────┘     └──────────────┘
 ```
 
@@ -113,9 +117,15 @@ API REST para gerenciamento de atrações turísticas com busca geoespacial, res
 | `DELETE` | `/{id}` | Remover usuário (bloqueado se houver vínculos) |
 | `PATCH` | `/{id}/promote-guide` | Promover tourist → guide |
 
+### Webhooks M2M (`/api/v1/webhooks`) — Protegido por HMAC-SHA256 no Gateway
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `POST` | `/reservations/{id}/confirm` | Confirma reserva pendente via callback assinado (`X-Timestamp` + `X-Signature`) |
+
 ### Documentação interativa
 
-Swagger UI disponível em: `http://localhost:8080/swagger-ui.html`
+Swagger UI disponível em `http://localhost:8080/swagger-ui.html` ao rodar o backend diretamente (no Docker Compose com o Gateway na borda, apenas `/api/*` é exposto publicamente).
 
 ---
 
@@ -187,7 +197,7 @@ java -jar target-maven/*.jar --spring.profiles.active=dev
 
 ## Observabilidade
 
-O Prometheus coleta métricas do Spring Actuator (`/actuator/prometheus`) a cada 15s. O Grafana se conecta ao Prometheus como data source.
+O Prometheus coleta métricas do **Crypto-Gateway** (`/metrics`: `gateway_http_requests_total`, `gateway_http_request_duration_seconds`) e do **Spring Actuator** (`/actuator/prometheus`) a cada 15s. O Grafana se conecta ao Prometheus como data source.
 
 Para configurar o Grafana:
 1. Acesse `http://localhost:3000` (user: `admin`, senha: definida em `GF_ADMIN_PASSWORD`)
@@ -202,7 +212,7 @@ Para configurar o Grafana:
 mvn clean test
 ```
 
-A suíte conta com **155 testes automatizados** (unitários com JUnit 5/Mockito, testes de slice/segurança e testes de integração reais com **Testcontainers PostGIS + Flyway**), executados no CI (GitHub Actions) a cada push/PR na branch `main`.
+A suíte conta com testes automatizados (unitários com JUnit 5/Mockito, testes de slice/segurança e testes de integração reais com **Testcontainers PostGIS + Flyway**), executados no CI (GitHub Actions) a cada push/PR na branch `main`.
 
 ---
 
@@ -226,9 +236,17 @@ A suíte conta com **155 testes automatizados** (unitários com JUnit 5/Mockito,
 | `PGADMIN_EMAIL` | E-mail inicial do pgAdmin (Docker) | `admin@titureco.com` |
 | `PGADMIN_PASSWORD` | Senha inicial do pgAdmin (Docker) | `admin` |
 | `GF_ADMIN_PASSWORD` | Senha do admin do Grafana | `admin` |
-| `RATE_LIMIT_CAPACITY` | Limite de requests por bucket | `100` |
-| `RATE_LIMIT_REFILL_TOKENS` | Tokens recarregados por ciclo | `100` |
-| `RATE_LIMIT_REFILL_MINUTES` | Intervalo de recarga (min) | `1` |
+| `RATE_LIMIT_ENABLED` | Ativa/desativa `RateLimitFilter` do Spring (`false` atrás do Gateway) | `true` (`false` no Compose) |
+| `RATE_LIMIT_CAPACITY` | Limite de requests por bucket (Spring) | `100` |
+| `RATE_LIMIT_REFILL_TOKENS` | Tokens recarregados por ciclo (Spring) | `100` |
+| `RATE_LIMIT_REFILL_MINUTES` | Intervalo de recarga em min (Spring) | `1` |
+| `GATEWAY_CONTEXT` | Caminho do repositório `api_gateway` para build no Compose | `../../GolandProjects/api_gateway` |
+| `HMAC_SECRET` | Chave secreta HMAC-SHA256 do Gateway (min 32 chars) | — |
+| `HMAC_TOLERANCE` | Janela anti-replay do `X-Timestamp` no Gateway | `5m` |
+| `HMAC_PROTECT_ALL` | Exige HMAC em todo `/api/` (além de `/api/v1/webhooks/`) | `false` |
+| `GATEWAY_RATE_LIMIT_REQUESTS` | Limite de requisições por IP na janela do Gateway | `100` |
+| `GATEWAY_RATE_LIMIT_WINDOW` | Janela de rate limit do Gateway | `1m` |
+| `GATEWAY_REDIS_DB` | Banco Redis usado pelo Gateway | `1` |
 
 ---
 
@@ -237,7 +255,7 @@ A suíte conta com **155 testes automatizados** (unitários com JUnit 5/Mockito,
 ```
 src/main/java/br/ufpb/iago/backend/
 ├── config/          # SecurityConfig, CorsConfig, RateLimitConfig, OpenApiConfig, AdminSeeder
-├── controller/      # AuthController, AttractionController, ReservationController, ReviewController, UserController
+├── controller/      # AuthController, AttractionController, ReservationController, ReviewController, UserController, WebhookController
 ├── dto/             # Request e Response DTOs (Java Records + Bean Validation)
 ├── exception/       # Exceções de domínio + GlobalExceptionHandler
 ├── mapper/          # MapStruct mappers
