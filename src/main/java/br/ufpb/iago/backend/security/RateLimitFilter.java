@@ -26,6 +26,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final ProxyManager<String> proxyManager;
 
+    @Value("${rate-limit.enabled:true}")
+    private boolean enabled = true;
+
     @Value("${rate-limit.capacity:100}")
     private long capacity;
 
@@ -42,6 +45,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+
+        if (!enabled) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String path = request.getRequestURI();
         if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui") || path.startsWith("/error") || path.startsWith("/actuator/")) {

@@ -122,4 +122,14 @@ class RateLimitFilterTest {
         verify(filterChain).doFilter(request, response);
         verify(response, never()).setStatus(429);
     }
+
+    @Test
+    void doFilterInternal_shouldBypass_whenDisabled() throws Exception {
+        ReflectionTestUtils.setField(rateLimitFilter, "enabled", false);
+
+        rateLimitFilter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        verifyNoInteractions(proxyManager);
+    }
 }

@@ -54,6 +54,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/login").permitAll()
                         .requestMatchers("/api/v1/auth/refresh").permitAll()
 
+                        // Webhooks M2M: autenticação HMAC-SHA256 aplicada na borda pelo API Gateway (rede interna)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/webhooks/**").permitAll()
+
                         // Attractions: leitura pública, escrita restrita a GUIDE
                         .requestMatchers(HttpMethod.GET, "/api/v1/attractions/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/attractions/**").hasAnyRole("GUIDE", "ADMIN")

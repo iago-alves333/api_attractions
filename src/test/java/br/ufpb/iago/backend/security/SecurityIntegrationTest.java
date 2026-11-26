@@ -5,9 +5,12 @@ import br.ufpb.iago.backend.config.SecurityConfig;
 import br.ufpb.iago.backend.controller.AttractionController;
 import br.ufpb.iago.backend.controller.ReservationController;
 import br.ufpb.iago.backend.controller.UserController;
+import br.ufpb.iago.backend.controller.WebhookController;
 import br.ufpb.iago.backend.dto.PageDTO;
+import br.ufpb.iago.backend.dto.ReservationResponseDTO;
 import br.ufpb.iago.backend.exception.GlobalExceptionHandler;
 import br.ufpb.iago.backend.model.Role;
+import br.ufpb.iago.backend.model.Status;
 import br.ufpb.iago.backend.model.User;
 import br.ufpb.iago.backend.repository.UserRepository;
 import br.ufpb.iago.backend.service.AttractionService;
@@ -27,9 +30,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,10 +48,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = {ReservationController.class, AttractionController.class, UserController.class})
+@WebMvcTest(controllers = {ReservationController.class, AttractionController.class, UserController.class, WebhookController.class})
 @Import({
         SecurityConfig.class,
         CorsConfig.class,
@@ -173,5 +179,24 @@ class SecurityIntegrationTest {
         mockMvc.perform(delete("/api/v1/attractions/" + attractionId)
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/webhooks/reservations/{id}/confirm deve permitir chamada M2M sem JWT")
+    void webhookConfirmAllowsPostWithoutJwt() throws Exception {
+        UUID reservationId = UUID.randomUUID();
+        ReservationResponseDTO dto = new ReservationResponseDTO(
+                reservationId, tourist.getId(), "Tourist", UUID.randomUUID(), "Attraction",
+                Status.CONFIRMED, LocalDateTime.now().plusDays(1), LocalDateTime.now()
+        );
+        when(reservationService.confirm(reservationId, null, true)).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/webhooks/reservations/" + reservationId + "/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"event\":\"payment.approved\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/webhooks/reservations/" + reservationId + "/confirm"))
+                .andExpect(status().isForbidden());
     }
 }
